@@ -7,8 +7,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        spotify: "#1DB954",
+        spotify: "rgb(var(--accent-rgb) / <alpha-value>)",
         "spotify-dark": "#191414",
+      },
+      boxShadow: {
+        "spotify-glow": "0 0 80px -20px rgb(var(--accent-rgb) / 0.45)",
       },
     },
   },

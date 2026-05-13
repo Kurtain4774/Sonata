@@ -34,7 +34,7 @@ Next.js 14 (App Router) · NextAuth (Spotify OAuth) · MongoDB / Mongoose · Goo
 2. In Vercel, **New Project → Import** your repo. Framework auto-detects as Next.js.
 3. **Project Settings → Environment Variables** — add every var from `.env.local.example`:
    - `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`
-   - `NEXTAUTH_URL` → your production URL (e.g. `https://sonata.vercel.app`)
+   - `NEXTAUTH_URL` → your production URL (`https://sonata-liart.vercel.app`)
    - `NEXTAUTH_SECRET` → fresh `openssl rand -base64 32` (don't reuse the dev one)
    - `TOKEN_ENCRYPTION_KEY` → fresh `openssl rand -base64 32`
    - `GEMINI_API_KEY`

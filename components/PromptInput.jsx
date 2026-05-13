@@ -21,7 +21,7 @@ export default function PromptInput({ value, onChange, onSubmit, loading }) {
         <button
           type="submit"
           disabled={loading || !value.trim()}
-          className="px-8 py-3 rounded-full bg-spotify hover:bg-green-400 text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-8 py-3 rounded-full bg-spotify hover:brightness-110 text-black font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Generating…" : "Generate"}
         </button>

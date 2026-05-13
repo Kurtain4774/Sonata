@@ -1,5 +1,7 @@
 # Sonata — AI Spotify Playlist Builder
 
+Always use the --frontend-design skill when working on the frontend
+
 Next.js 14 (App Router) + Tailwind CSS + MongoDB (Mongoose) + Google Gemini API + Spotify Web API + NextAuth.js + Vercel
 
 ## Routes

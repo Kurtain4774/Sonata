@@ -33,3 +33,17 @@ export async function GET() {
     })),
   });
 }
+
+export async function DELETE() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  await connectDB();
+  const user = await User.findOne({ spotifyId: session.spotifyId });
+  if (!user) return NextResponse.json({ deleted: 0 });
+
+  const result = await Prompt.deleteMany({ userId: user._id });
+  return NextResponse.json({ deleted: result.deletedCount || 0 });
+}

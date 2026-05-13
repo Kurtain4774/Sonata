@@ -11,7 +11,7 @@ function formatMs(ms) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function MiniPlayer() {
+export default function MiniPlayer({ className = "" }) {
   const wb = useWebPlayback();
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -52,7 +52,7 @@ export default function MiniPlayer() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-neutral-950 border-t border-neutral-800">
+    <div className={`fixed bottom-0 left-0 right-0 z-50 bg-neutral-950 border-t border-neutral-800 ${className}`}>
       {/* Thin progress bar at the very top of the player */}
       <div className="h-0.5 bg-neutral-800">
         <div
@@ -103,7 +103,7 @@ export default function MiniPlayer() {
           <button
             onClick={isPlaying ? pausePlayback : resumePlayback}
             aria-label={isPlaying ? "Pause" : "Play"}
-            className="w-9 h-9 rounded-full bg-green-500 hover:bg-green-400 text-black flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-full bg-green-500 hover:brightness-110 text-black flex items-center justify-center transition-colors"
           >
             {isPlaying
               ? <FaPause className="text-xs" />

@@ -1,34 +1,60 @@
+"use client";
+
 import Link from "next/link";
-import AuthButton from "./AuthButton";
+import { usePathname } from "next/navigation";
+import ProfileMenu from "./ProfileMenu";
+
+const NAV = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/history", label: "History" },
+  { href: "/stats", label: "Stats" },
+  { href: "/explore", label: "Explore" },
+];
+
+function Logo() {
+  return (
+    <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold">
+      <span className="inline-flex items-end gap-[2px] h-5">
+        <span className="w-[3px] h-2 bg-spotify rounded-sm" />
+        <span className="w-[3px] h-4 bg-spotify rounded-sm" />
+        <span className="w-[3px] h-3 bg-spotify rounded-sm" />
+        <span className="w-[3px] h-5 bg-spotify rounded-sm" />
+      </span>
+      <span>Sonata</span>
+    </Link>
+  );
+}
 
 export default function Navbar({ session }) {
   const user = session?.user;
+  const pathname = usePathname() || "";
   return (
     <header className="border-b border-neutral-900">
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold">
-            Sound<span className="text-spotify">Sage</span>
-          </Link>
-          <nav className="flex items-center gap-4 text-sm text-neutral-300">
-            <Link href="/dashboard" className="hover:text-white">Dashboard</Link>
-            <Link href="/history" className="hover:text-white">History</Link>
-            <Link href="/stats" className="hover:text-white">Stats</Link>
-            <Link href="/explore" className="hover:text-white">Explore</Link>
+      <div className="max-w-[1600px] mx-auto flex items-center justify-between px-4 lg:px-6 py-4">
+        <div className="flex items-center gap-8">
+          <Logo />
+          <nav className="flex items-center gap-6 text-sm">
+            {NAV.map((n) => {
+              const active = pathname === n.href || pathname.startsWith(n.href + "/");
+              return (
+                <Link
+                  key={n.href}
+                  href={n.href}
+                  className={`relative pb-1 transition-colors ${
+                    active ? "text-spotify" : "text-neutral-300 hover:text-white"
+                  }`}
+                >
+                  {n.label}
+                  {active && (
+                    <span className="absolute left-0 right-0 -bottom-[14px] h-[2px] bg-spotify rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          {user?.image && (
-            <img
-              src={user.image}
-              alt={user.name || "user"}
-              className="w-8 h-8 rounded-full"
-            />
-          )}
-          <span className="hidden sm:inline text-sm text-neutral-300">
-            {user?.name}
-          </span>
-          <AuthButton variant="logout" />
+          <ProfileMenu user={user} />
         </div>
       </div>
     </header>

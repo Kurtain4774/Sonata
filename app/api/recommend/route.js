@@ -7,6 +7,8 @@ import { getDeezerPreview } from "@/lib/deezer";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
+import Settings from "@/models/Settings";
+import { mergeWithDefaults } from "@/lib/settings";
 
 function titleCasePlaylistName(prompt) {
   const trimmed = prompt.trim().slice(0, 60);
@@ -42,6 +44,12 @@ export async function POST(req) {
     await connectDB();
     const user = await User.findOne({ spotifyId: session.spotifyId });
 
+    let settings = mergeWithDefaults(null);
+    if (user) {
+      const settingsDoc = await Settings.findOne({ userId: user._id }).lean();
+      settings = mergeWithDefaults(settingsDoc);
+    }
+
     let excludedSongs = [];
     if (user) {
       const pastPrompts = await Prompt.find(
@@ -62,22 +70,30 @@ export async function POST(req) {
     }
 
     let personalization = null;
-    try {
-      const [topArtists, topTracks] = await Promise.all([
-        getTopArtists(session.accessToken, "medium_term", 10),
-        getTopTracks(session.accessToken, "medium_term", 10),
-      ]);
-      personalization = { topArtists, topTracks };
-    } catch (err) {
-      console.warn("Personalization fetch failed, falling back:", err?.message || err);
+    if (settings.aiTastePersonalization) {
+      try {
+        const [topArtists, topTracks] = await Promise.all([
+          getTopArtists(session.accessToken, "medium_term", 10),
+          getTopTracks(session.accessToken, "medium_term", 10),
+        ]);
+        personalization = { topArtists, topTracks };
+      } catch (err) {
+        console.warn("Personalization fetch failed, falling back:", err?.message || err);
+      }
     }
 
-    const items = await getRecommendations(prompt, personalization, excludedSongs, context);
-    const matched = await searchTracks(session.accessToken, items);
+    const items = await getRecommendations(prompt, personalization, excludedSongs, context, settings);
+    let matched = await searchTracks(session.accessToken, items);
+    if (!settings.allowExplicit) {
+      matched = matched.filter((t) => !t.explicit);
+    }
+    const fetchPreview = settings.enableDeezerPreviews
+      ? (t) => getDeezerPreview(t.title, t.artist)
+      : async () => null;
     const tracks = await Promise.all(
       matched.map(async (t) => ({
         ...t,
-        previewUrl: await getDeezerPreview(t.title, t.artist),
+        previewUrl: await fetchPreview(t),
       }))
     );
     const playlistName = titleCasePlaylistName(prompt);

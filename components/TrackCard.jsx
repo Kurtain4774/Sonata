@@ -1,7 +1,7 @@
 import { FaSpotify } from "react-icons/fa";
 import AudioPreview from "./AudioPreview";
 
-export default function TrackCard({ track }) {
+export default function TrackCard({ track, autoplay = false }) {
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition">
       {track.albumArt ? (
@@ -25,6 +25,7 @@ export default function TrackCard({ track }) {
         title={track.title}
         artist={track.artist}
         albumArt={track.albumArt}
+        autoplay={autoplay}
       />
       {track.spotifyUrl && (
         <a

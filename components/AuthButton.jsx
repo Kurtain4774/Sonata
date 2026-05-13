@@ -32,7 +32,7 @@ export default function AuthButton({ variant = "login" }) {
     return (
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-spotify hover:bg-green-500 text-black font-semibold"
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-spotify hover:brightness-110 text-black font-semibold"
       >
         Go to Dashboard
       </Link>
@@ -42,7 +42,7 @@ export default function AuthButton({ variant = "login" }) {
   return (
     <button
       onClick={() => signIn("spotify", { callbackUrl: "/dashboard" })}
-      className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-spotify hover:bg-green-500 text-black font-semibold"
+      className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-spotify hover:brightness-110 text-black font-semibold"
     >
       <FaSpotify className="text-xl" />
       Login with Spotify
