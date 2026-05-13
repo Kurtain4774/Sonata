@@ -50,7 +50,7 @@ function Sparkline() {
   );
 }
 
-export default function DashboardPreview({ selectedTrackId, onSelectTrack }) {
+export default function DashboardPreview({ selectedTrackId, onSelectTrack, tracks = SAMPLE_TRACKS }) {
   return (
     <div className="relative w-full max-w-full rounded-xl sm:rounded-2xl overflow-hidden border border-white/10 bg-[#0b0b0d]/95 backdrop-blur-xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9),0_0_60px_-20px_rgba(29,185,84,0.15)] ring-1 ring-white/5">
       {/* Browser chrome */}
@@ -165,7 +165,7 @@ export default function DashboardPreview({ selectedTrackId, onSelectTrack }) {
           </div>
 
           <div className="space-y-1.5">
-            {SAMPLE_TRACKS.slice(0, 5).map((t) => {
+            {tracks.slice(0, 5).map((t) => {
               const active = t.id === selectedTrackId;
               return (
                 <button

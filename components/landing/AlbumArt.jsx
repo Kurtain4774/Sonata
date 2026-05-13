@@ -5,9 +5,10 @@ import { useState } from "react";
 export default function AlbumArt({ track, fill = false, className = "", sizes = "64px" }) {
   const [failed, setFailed] = useState(false);
 
+  const src = track.albumArtUrl || track.albumArt;
   const gradient = `linear-gradient(135deg, ${track.gradientFrom} 0%, ${track.gradientTo} 100%)`;
 
-  if (failed || !track.albumArtUrl) {
+  if (failed || !src) {
     return (
       <div
         className={`flex items-center justify-center text-white/60 text-xs font-bold ${className}`}
@@ -26,7 +27,7 @@ export default function AlbumArt({ track, fill = false, className = "", sizes = 
       <>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={track.albumArtUrl}
+          src={src}
           alt={track.album}
           onError={() => setFailed(true)}
           className="absolute inset-0 w-full h-full object-cover"

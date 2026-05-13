@@ -6,7 +6,7 @@ import ProfileMenu from "./ProfileMenu";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/history", label: "History" },
+  { href: "/your-music", label: "Your Music" },
   { href: "/stats", label: "Stats" },
   { href: "/explore", label: "Explore" },
 ];

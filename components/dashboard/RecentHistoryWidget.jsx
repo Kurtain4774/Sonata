@@ -38,7 +38,7 @@ export default function RecentHistoryWidget() {
           <FiClock className="text-neutral-400" />
           <h3 className="text-sm font-semibold">Recent History</h3>
         </div>
-        <Link href="/history" className="text-xs text-neutral-400 hover:text-white">
+        <Link href="/your-music" className="text-xs text-neutral-400 hover:text-white">
           View all
         </Link>
       </div>
@@ -57,7 +57,7 @@ export default function RecentHistoryWidget() {
         {items.map((p) => (
           <li key={p.id}>
             <Link
-              href={`/history/${p.id}`}
+              href={`/your-music/${p.id}`}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-900 transition-colors group"
             >
               <div className="w-9 h-9 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center flex-shrink-0">

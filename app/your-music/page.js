@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -6,11 +5,11 @@ import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
 import Navbar from "@/components/Navbar";
-import HistoryPageClient from "@/components/HistoryPageClient";
+import YourMusicClient from "@/components/YourMusicClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function HistoryPage() {
+export default async function YourMusicPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/");
 
@@ -46,20 +45,7 @@ export default async function HistoryPage() {
     <main className="min-h-screen">
       <Navbar session={session} />
       <div className="max-w-3xl mx-auto px-6 py-10">
-        {items.length === 0 ? (
-          <>
-            <h1 className="text-3xl font-semibold mb-6">Your History</h1>
-            <p className="text-neutral-400">
-              No playlists yet.{" "}
-              <Link href="/dashboard" className="text-spotify hover:underline">
-                Go generate your first one
-              </Link>
-              .
-            </p>
-          </>
-        ) : (
-          <HistoryPageClient items={items} />
-        )}
+        <YourMusicClient generated={items} />
       </div>
     </main>
   );

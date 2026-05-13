@@ -13,7 +13,7 @@ const themeBootstrap = `(function(){try{var s=JSON.parse(localStorage.getItem('s
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>

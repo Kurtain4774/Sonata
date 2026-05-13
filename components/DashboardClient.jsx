@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import TrackList from "./TrackList";
 import PlaylistSaveButton from "./PlaylistSaveButton";
 import WebPlaybackProvider from "./WebPlaybackProvider";
-import MiniPlayer from "./MiniPlayer";
 import { DEFAULT_FINE_TUNE } from "./FineTuneControls";
 
 import HeroPromptCard from "./dashboard/HeroPromptCard";
@@ -226,8 +225,6 @@ export default function DashboardClient() {
           </aside>
         </div>
       </div>
-
-      <MiniPlayer className="lg:hidden" />
     </WebPlaybackProvider>
   );
 }

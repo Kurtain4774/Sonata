@@ -39,7 +39,7 @@ export default function RecommendedRow() {
             AI-curated playlists based on your taste and sessions.
           </span>
         </div>
-        <Link href="/history" className="text-xs text-neutral-400 hover:text-white inline-flex items-center gap-1">
+        <Link href="/your-music" className="text-xs text-neutral-400 hover:text-white inline-flex items-center gap-1">
           View all <FiChevronRight />
         </Link>
       </div>
@@ -85,7 +85,7 @@ function RecCard({ item, isNew, wb }) {
   const thumb = item.thumbnails?.[0];
   return (
     <div className="relative snap-start flex-shrink-0 w-[220px] rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 group">
-      <Link href={`/history/${item.id}`} className="block">
+      <Link href={`/your-music/${item.id}`} className="block">
         <div className="relative aspect-square bg-neutral-800">
           {thumb ? (
             // eslint-disable-next-line @next/next/no-img-element

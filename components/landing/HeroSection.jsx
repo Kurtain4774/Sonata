@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { FaSpotify } from "react-icons/fa";
 import DashboardPreview from "./DashboardPreview";
 import FloatingAlbums from "./FloatingAlbums";
 import FeatureCards from "./FeatureCards";
-import { DEFAULT_TRACK_ID } from "./tracks";
+import { DEFAULT_TRACK_ID, SAMPLE_TRACKS } from "./tracks";
 
 export default function HeroSection() {
   const [selectedTrackId, setSelectedTrackId] = useState(DEFAULT_TRACK_ID);
+  const [tracks, setTracks] = useState(SAMPLE_TRACKS);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/landing-tracks")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (cancelled || !data?.tracks) return;
+        setTracks(data.tracks);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const { data: session } = useSession();
 
   const handleCta = () => {
@@ -47,7 +60,7 @@ export default function HeroSection() {
         />
       </div>
 
-      <FloatingAlbums selectedTrackId={selectedTrackId} />
+      <FloatingAlbums selectedTrackId={selectedTrackId} tracks={tracks} />
 
       <div className="relative z-20 flex-1 flex items-center w-full">
         <div className="w-[min(92vw,1120px)] xl:w-[min(94vw,1240px)] min-[1500px]:w-[min(94vw,1780px)] min-[1800px]:w-[min(94vw,1880px)] mx-auto pt-28 sm:pt-32 pb-16 min-[1500px]:min-h-[calc(100vh-96px)] min-[1500px]:box-border min-[1500px]:pt-12 min-[1500px]:pb-32 grid min-[1500px]:grid-cols-[minmax(560px,0.84fr)_minmax(720px,1.16fr)] gap-14 min-[1500px]:gap-[clamp(48px,4vw,78px)] items-center">
@@ -123,6 +136,7 @@ export default function HeroSection() {
             <DashboardPreview
               selectedTrackId={selectedTrackId}
               onSelectTrack={setSelectedTrackId}
+              tracks={tracks}
             />
           </div>
         </div>

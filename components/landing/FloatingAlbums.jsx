@@ -3,13 +3,13 @@
 import AlbumArt from "./AlbumArt";
 import { SAMPLE_TRACKS } from "./tracks";
 
-export default function FloatingAlbums({ selectedTrackId }) {
+export default function FloatingAlbums({ selectedTrackId, tracks = SAMPLE_TRACKS }) {
   const idx = Math.max(
     0,
-    SAMPLE_TRACKS.findIndex((t) => t.id === selectedTrackId)
+    tracks.findIndex((t) => t.id === selectedTrackId)
   );
-  const top = SAMPLE_TRACKS[idx];
-  const bottom = SAMPLE_TRACKS[(idx + 3) % SAMPLE_TRACKS.length];
+  const top = tracks[idx];
+  const bottom = tracks[(idx + 3) % tracks.length];
 
   const tiles = [
     {

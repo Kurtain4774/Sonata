@@ -27,8 +27,7 @@ export default function HistoryPageClient({ items }) {
 
   return (
     <>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-semibold">Your History</h1>
+      <div className="flex items-center justify-end mb-6">
         <button
           onClick={() => (mergeMode ? exitMergeMode() : setMergeMode(true))}
           className={
@@ -42,7 +41,7 @@ export default function HistoryPageClient({ items }) {
         </button>
       </div>
 
-      <div className={`grid gap-3 ${mergeMode && selectedTracks.size > 0 ? "pb-24" : ""}`}>
+      <div className={`grid gap-3 ${mergeMode ? "" : "sm:grid-cols-2"} ${mergeMode && selectedTracks.size > 0 ? "pb-24" : ""}`}>
         {items.map((item) =>
           mergeMode ? (
             <MergeHistoryCard
