@@ -11,8 +11,10 @@ export async function GET() {
         const found = await searchTrackPublic(seed.title, seed.artist).catch(() => null);
         return {
           ...seed,
-          albumArtUrl: found?.albumArt || seed.albumArtUrl || null,
-          resolvedAlbum: found?.album || seed.album,
+          ...(found || {}),
+          id: seed.id,
+          albumArt: found?.albumArt || seed.albumArt || null,
+          durationLabel: seed.durationLabel,
         };
       })
     );

@@ -5,7 +5,7 @@ import { useState } from "react";
 export default function AlbumArt({ track, fill = false, className = "", sizes = "64px" }) {
   const [failed, setFailed] = useState(false);
 
-  const src = track.albumArtUrl || track.albumArt;
+  const src = track.albumArt;
   const gradient = `linear-gradient(135deg, ${track.gradientFrom} 0%, ${track.gradientTo} 100%)`;
 
   if (failed || !src) {
@@ -40,7 +40,7 @@ export default function AlbumArt({ track, fill = false, className = "", sizes = 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={track.albumArtUrl}
+      src={src}
       alt={track.album}
       onError={() => setFailed(true)}
       className={`w-full h-full object-cover ${className}`}
