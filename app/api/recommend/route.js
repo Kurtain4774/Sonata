@@ -1,11 +1,9 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getRecommendations, GeminiParseError, GeminiUnavailableError } from "@/lib/gemini";
 import { searchTrack, SpotifyAuthError, getTopArtists, getTopTracks, getRecentlyPlayed } from "@/lib/spotify";
 import { withSpotifyRetry } from "@/lib/spotifyAuth";
 import { rateLimit } from "@/lib/rateLimit";
 import { getDeezerPreview } from "@/lib/deezer";
+import { jsonError, readJsonBody, requireApiSession, rateLimitResponse } from "@/lib/api";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
@@ -22,24 +20,18 @@ function titleCasePlaylistName(prompt) {
 }
 
 export async function POST(req) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.error === "RefreshAccessTokenError") {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (response) return response;
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const { body, response: invalidJson } = await readJsonBody(req);
+  if (invalidJson) return invalidJson;
 
   const prompt = (body?.prompt || "").toString().trim();
   if (!prompt) {
-    return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    return jsonError("Prompt is required", 400);
   }
   if (prompt.length > 500) {
-    return NextResponse.json({ error: "Prompt too long (max 500 chars)" }, { status: 400 });
+    return jsonError("Prompt too long (max 500 chars)", 400);
   }
   const context = body?.context ?? null;
   const rawSeed = body?.seed;
@@ -49,10 +41,7 @@ export async function POST(req) {
       : null;
   const rl = rateLimit(`recommend:${session.spotifyId}`, { limit: 10, windowMs: 60_000 });
   if (!rl.ok) {
-    return NextResponse.json(
-      { error: `Slow down — try again in ${Math.ceil(rl.retryAfterMs / 1000)}s.` },
-      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
-    );
+    return rateLimitResponse(rl);
   }
 
   const excludedArtists = parseExcludedArtists(body);

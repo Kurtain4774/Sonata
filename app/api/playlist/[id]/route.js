@@ -1,35 +1,27 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
 import { updatePlaylistDetails, SpotifyAuthError } from "@/lib/spotify";
+import { jsonError, jsonOk, readJsonBody, requireApiSession, spotifySessionExpiredResponse } from "@/lib/api";
 
 export async function PATCH(req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.error === "RefreshAccessTokenError") {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (response) return response;
 
   const { id } = await params;
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const { body, response: invalidJson } = await readJsonBody(req);
+  if (invalidJson) return invalidJson;
 
   const { playlistName, playlistDescription, excludedArtists } = body || {};
 
   try {
     await connectDB();
     const user = await User.findOne({ spotifyId: session.spotifyId });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user) return jsonError("User not found", 404);
 
     const doc = await Prompt.findOne({ _id: id, userId: user._id });
-    if (!doc) return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
+    if (!doc) return jsonError("Playlist not found", 404);
 
     if (typeof playlistName === "string") doc.playlistName = playlistName.slice(0, 120);
     if (typeof playlistDescription === "string") doc.playlistDescription = playlistDescription.slice(0, 500);
@@ -49,33 +41,31 @@ export async function PATCH(req, { params }) {
       }
     }
 
-    return NextResponse.json({ ok: true, playlist: doc });
+    return jsonOk({ ok: true, playlist: doc });
   } catch (err) {
     if (err instanceof SpotifyAuthError) {
-      return NextResponse.json({ error: "Spotify session expired" }, { status: 401 });
+      return spotifySessionExpiredResponse("Spotify session expired");
     }
     console.error("PATCH /api/playlist/[id] failed", err);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return jsonError("Update failed", 500);
   }
 }
 
 export async function DELETE(req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.error === "RefreshAccessTokenError") {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (response) return response;
   const { id } = await params;
   try {
     await connectDB();
     const user = await User.findOne({ spotifyId: session.spotifyId });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user) return jsonError("User not found", 404);
     const res = await Prompt.deleteOne({ _id: id, userId: user._id });
     if (res.deletedCount === 0) {
-      return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
+      return jsonError("Playlist not found", 404);
     }
-    return NextResponse.json({ ok: true });
+    return jsonOk({ ok: true });
   } catch (err) {
     console.error("DELETE /api/playlist/[id] failed", err);
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    return jsonError("Delete failed", 500);
   }
 }

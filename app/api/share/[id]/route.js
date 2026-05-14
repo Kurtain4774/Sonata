@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import mongoose from "mongoose";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
+import { jsonOk, requireApiSession } from "@/lib/api";
 
 export async function POST(_req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession({ rejectRefreshError: false });
+  if (response) return response;
 
   if (!mongoose.isValidObjectId(params.id)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -27,5 +24,5 @@ export async function POST(_req, { params }) {
   );
   if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({ success: true });
+  return jsonOk({ success: true });
 }

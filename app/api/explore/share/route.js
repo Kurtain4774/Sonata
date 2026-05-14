@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
 import { rateLimit } from "@/lib/rateLimit";
+import { jsonError, jsonOk, readJsonBody, requireApiSession } from "@/lib/api";
 
 export async function PATCH(req) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession({ rejectRefreshError: false });
+  if (response) return response;
 
   const rl = rateLimit(`explore-share:${session.spotifyId}`, { limit: 20, windowMs: 60_000 });
   if (!rl.ok) {
@@ -20,28 +17,24 @@ export async function PATCH(req) {
     );
   }
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const { body, response: invalidJson } = await readJsonBody(req);
+  if (invalidJson) return invalidJson;
 
   const { promptId, shared } = body || {};
   if (!promptId || typeof shared !== "boolean") {
-    return NextResponse.json({ error: "Missing promptId or shared" }, { status: 400 });
+    return jsonError("Missing promptId or shared", 400);
   }
 
   await connectDB();
   const user = await User.findOne({ spotifyId: session.spotifyId });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!user) return jsonError("User not found", 404);
 
   const prompt = await Prompt.findOneAndUpdate(
     { _id: promptId, userId: user._id },
     { sharedToExplore: shared },
     { new: true }
   );
-  if (!prompt) return NextResponse.json({ error: "Prompt not found" }, { status: 404 });
+  if (!prompt) return jsonError("Prompt not found", 404);
 
-  return NextResponse.json({ sharedToExplore: prompt.sharedToExplore });
+  return jsonOk({ sharedToExplore: prompt.sharedToExplore });
 }

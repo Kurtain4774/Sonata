@@ -72,7 +72,7 @@ describe("POST /api/recommend", () => {
     expect((await POST(makeReq({ prompt: "x".repeat(501) }))).status).toBe(400);
   });
 
-  it("streams meta → track → done on success", async () => {
+  it("preserves the streaming frame contract on success", async () => {
     getRecommendations.mockResolvedValue([{ title: "T", artist: "A" }]);
     searchTrack.mockResolvedValue({
       title: "T",
@@ -82,10 +82,30 @@ describe("POST /api/recommend", () => {
     });
     const res = await POST(makeReq({ prompt: "chill vibes" }));
     expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/x-ndjson; charset=utf-8");
+
     const lines = await readStream(res);
-    expect(lines[0].type).toBe("meta");
-    expect(lines.find((l) => l.type === "track")).toBeTruthy();
-    expect(lines[lines.length - 1].type).toBe("done");
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toEqual({
+      type: "meta",
+      playlistName: "Chill Vibes Mix",
+      prompt: "chill vibes",
+      total: 1,
+    });
+    expect(lines[1]).toEqual({
+      type: "track",
+      track: {
+        title: "T",
+        artist: "A",
+        uri: "spotify:track:1",
+        explicit: false,
+        previewUrl: null,
+      },
+    });
+    expect(lines[2]).toEqual({
+      type: "done",
+      promptId: null,
+    });
   });
 
   it("deduplicates tracks with the same URI", async () => {
@@ -131,6 +151,10 @@ describe("POST /api/recommend", () => {
     const res = await POST(makeReq({ prompt: "p" }));
     const lines = await readStream(res);
     const err = lines.find((l) => l.type === "error");
-    expect(err.status).toBe(502);
+    expect(err).toEqual({
+      type: "error",
+      status: 502,
+      message: "The AI returned an unreadable response. Try again.",
+    });
   });
 });

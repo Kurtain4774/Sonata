@@ -6,6 +6,7 @@ import User from "@/models/User";
 import Prompt from "@/models/Prompt";
 import Navbar from "@/components/Navbar";
 import YourMusicClient from "@/components/YourMusicClient";
+import { mapPromptSummary } from "@/lib/promptMappers";
 
 export const dynamic = "force-dynamic";
 
@@ -22,24 +23,9 @@ export default async function YourMusicPage() {
         .lean()
     : [];
 
-  const items = prompts.map((p) => ({
-    id: p._id.toString(),
-    promptText: p.promptText,
-    playlistName: p.playlistName,
-    trackCount: p.recommendations?.length || 0,
-    thumbnails: (p.recommendations || [])
-      .slice(0, 5)
-      .map((t) => t.albumArt)
-      .filter(Boolean),
-    tracks: (p.recommendations || []).map((t) => ({
-      uri: t.uri || null,
-      title: t.title,
-      artist: t.artist,
-      albumArt: t.albumArt || null,
-    })),
-    savedAsPlaylist: p.savedAsPlaylist,
-    createdAt: p.createdAt,
-  }));
+  const items = prompts.map((prompt) =>
+    mapPromptSummary(prompt, { includeTracks: true, includeSpotifyUrl: false })
+  );
 
   return (
     <main className="min-h-screen">

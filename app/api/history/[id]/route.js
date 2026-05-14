@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import mongoose from "mongoose";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
+import { mapPromptApiDetail } from "@/lib/promptMappers";
+import { jsonOk, requireApiSession } from "@/lib/api";
 
 export async function GET(_req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession({ rejectRefreshError: false });
+  if (response) return response;
 
   if (!mongoose.isValidObjectId(params.id)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -23,14 +21,5 @@ export async function GET(_req, { params }) {
   const p = await Prompt.findOne({ _id: params.id, userId: user._id }).lean();
   if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({
-    id: p._id.toString(),
-    promptText: p.promptText,
-    playlistName: p.playlistName,
-    tracks: p.recommendations || [],
-    savedAsPlaylist: p.savedAsPlaylist,
-    spotifyPlaylistId: p.spotifyPlaylistId,
-    spotifyPlaylistUrl: p.spotifyPlaylistUrl,
-    createdAt: p.createdAt,
-  });
+  return jsonOk(mapPromptApiDetail(p));
 }

@@ -1,26 +1,17 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getSimilarRecommendations } from "@/lib/gemini";
-import { searchTracks } from "@/lib/spotify";
-import { getDeezerPreview } from "@/lib/deezer";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
+import { jsonError, jsonOk, readJsonBody, requireApiSession } from "@/lib/api";
 import { mapRecommendError } from "@/lib/recommendHelpers";
+import { searchAndEnrichTracks } from "@/lib/recommendationPipeline";
 
 export async function POST(req) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.error === "RefreshAccessTokenError") {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (response) return response;
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const { body, response: invalidJson } = await readJsonBody(req);
+  if (invalidJson) return invalidJson;
 
   const { promptId, currentTracks } = body || {};
 
@@ -28,39 +19,30 @@ export async function POST(req) {
     let tracks = currentTracks;
     if (!Array.isArray(tracks) || tracks.length === 0) {
       if (!promptId) {
-        return NextResponse.json(
-          { error: "promptId or currentTracks required" },
-          { status: 400 }
-        );
+        return jsonError("promptId or currentTracks required", 400);
       }
       await connectDB();
       const user = await User.findOne({ spotifyId: session.spotifyId });
-      if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      if (!user) return jsonError("User not found", 404);
       const doc = await Prompt.findOne({ _id: promptId, userId: user._id }).lean();
-      if (!doc) return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
+      if (!doc) return jsonError("Playlist not found", 404);
       tracks = doc.recommendations || [];
     }
 
     if (!tracks.length) {
-      return NextResponse.json({ tracks: [] });
+      return jsonOk({ tracks: [] });
     }
 
     const items = await getSimilarRecommendations(tracks, 20);
-    const matched = await searchTracks(session.accessToken, items);
-    const existingUris = new Set(tracks.map((t) => t.uri));
-    const filtered = matched.filter((t) => !existingUris.has(t.uri));
-    const enriched = await Promise.all(
-      filtered.map(async (t) => ({
-        ...t,
-        previewUrl: t.previewUrl || (await getDeezerPreview(t.title, t.artist)),
-      }))
-    );
+    const enriched = await searchAndEnrichTracks(session.accessToken, items, {
+      existingUris: tracks.map((track) => track.uri),
+    });
 
-    return NextResponse.json({ tracks: enriched });
+    return jsonOk({ tracks: enriched });
   } catch (err) {
     const mapped = mapRecommendError(err);
     if (mapped) return mapped;
     console.error("/api/recommend/similar failed", err);
-    return NextResponse.json({ error: "Similar fetch failed" }, { status: 500 });
+    return jsonError("Similar fetch failed", 500);
   }
 }

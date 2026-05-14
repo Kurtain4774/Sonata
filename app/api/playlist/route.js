@@ -1,6 +1,3 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
@@ -12,6 +9,7 @@ import {
 } from "@/lib/spotify";
 import { withSpotifyRetry } from "@/lib/spotifyAuth";
 import { uploadPlaylistCover } from "@/lib/playlistCover";
+import { jsonError, jsonOk, readJsonBody, requireApiSession, spotifySessionExpiredResponse } from "@/lib/api";
 
 function spotifyForbiddenMessage(err) {
   const detail = `${err.spotifyMessage || err.message || ""}`.toLowerCase();
@@ -32,24 +30,18 @@ function spotifyForbiddenMessage(err) {
 }
 
 export async function POST(req) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.error === "RefreshAccessTokenError") {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (response) return response;
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const { body, response: invalidJson } = await readJsonBody(req);
+  if (invalidJson) return invalidJson;
 
   const { promptId, name, description, trackUris, tracks } = body || {};
 
   try {
     await connectDB();
     const user = await User.findOne({ spotifyId: session.spotifyId });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user) return jsonError("User not found", 404);
 
     let promptDoc = null;
     let finalName = name;
@@ -58,7 +50,7 @@ export async function POST(req) {
     if (promptId) {
       promptDoc = await Prompt.findOne({ _id: promptId, userId: user._id });
       if (!promptDoc) {
-        return NextResponse.json({ error: "Prompt not found" }, { status: 404 });
+        return jsonError("Prompt not found", 404);
       }
       finalName = finalName || promptDoc.playlistName || "Sonata Mix";
       if (!finalUris) {
@@ -69,10 +61,7 @@ export async function POST(req) {
     }
 
     if (!finalName || !Array.isArray(finalUris) || finalUris.length === 0) {
-      return NextResponse.json(
-        { error: "Missing playlist name or tracks" },
-        { status: 400 }
-      );
+      return jsonError("Missing playlist name or tracks", 400);
     }
 
     const playlist = await withSpotifyRetry(session, (accessToken) =>
@@ -103,27 +92,21 @@ export async function POST(req) {
       await promptDoc.save();
     }
 
-    return NextResponse.json({
+    return jsonOk({
       playlistId: playlist.id,
       playlistUrl: playlist.external_urls?.spotify,
     });
   } catch (err) {
     if (err instanceof SpotifyAuthError) {
-      return NextResponse.json(
-        { error: "Spotify session expired - please log in again." },
-        { status: 401 }
-      );
+      return spotifySessionExpiredResponse("Spotify session expired - please log in again.");
     }
 
     if (err instanceof SpotifyApiError && err.status === 403) {
       console.warn("Spotify playlist save forbidden:", err.spotifyMessage || err.message);
-      return NextResponse.json(
-        { error: spotifyForbiddenMessage(err) },
-        { status: 403 }
-      );
+      return jsonError(spotifyForbiddenMessage(err), 403);
     }
 
     console.error("/api/playlist failed", err);
-    return NextResponse.json({ error: "Playlist save failed" }, { status: 500 });
+    return jsonError("Playlist save failed", 500);
   }
 }

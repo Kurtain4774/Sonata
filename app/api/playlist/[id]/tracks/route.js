@@ -1,6 +1,3 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
@@ -10,21 +7,16 @@ import {
   replacePlaylistTracks,
   SpotifyAuthError,
 } from "@/lib/spotify";
+import { jsonError, jsonOk, readJsonBody, requireApiSession, spotifySessionExpiredResponse } from "@/lib/api";
 
 export async function PATCH(req, { params }) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.error === "RefreshAccessTokenError") {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (response) return response;
 
   const { id } = await params;
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const { body, response: invalidJson } = await readJsonBody(req);
+  if (invalidJson) return invalidJson;
 
   const {
     removeUris,
@@ -38,10 +30,10 @@ export async function PATCH(req, { params }) {
   try {
     await connectDB();
     const user = await User.findOne({ spotifyId: session.spotifyId });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!user) return jsonError("User not found", 404);
 
     const doc = await Prompt.findOne({ _id: id, userId: user._id });
-    if (!doc) return NextResponse.json({ error: "Playlist not found" }, { status: 404 });
+    if (!doc) return jsonError("Playlist not found", 404);
 
     let recs = doc.recommendations.map((t) => t.toObject ? t.toObject() : t);
 
@@ -119,12 +111,12 @@ export async function PATCH(req, { params }) {
       }
     }
 
-    return NextResponse.json({ ok: true, recommendations: recs });
+    return jsonOk({ ok: true, recommendations: recs });
   } catch (err) {
     if (err instanceof SpotifyAuthError) {
-      return NextResponse.json({ error: "Spotify session expired" }, { status: 401 });
+      return spotifySessionExpiredResponse("Spotify session expired");
     }
     console.error("PATCH /api/playlist/[id]/tracks failed", err);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return jsonError("Update failed", 500);
   }
 }

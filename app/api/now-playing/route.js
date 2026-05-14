@@ -1,26 +1,19 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { jsonError, jsonOk, requireApiSession, spotifySessionExpiredResponse } from "@/lib/api";
 import { getCurrentPlayback, SpotifyAuthError } from "@/lib/spotify";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || session.error === "RefreshAccessTokenError") {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (response) return response;
 
   try {
     const playback = await getCurrentPlayback(session.accessToken);
-    return NextResponse.json({ playback });
+    return jsonOk({ playback });
   } catch (err) {
     if (err instanceof SpotifyAuthError) {
-      return NextResponse.json(
-        { error: "Spotify session expired — please log in again." },
-        { status: 401 }
-      );
+      return spotifySessionExpiredResponse();
     }
     console.error("/api/now-playing failed", err);
-    return NextResponse.json({ error: "Failed to fetch playback" }, { status: 500 });
+    return jsonError("Failed to fetch playback", 500);
   }
 }
 

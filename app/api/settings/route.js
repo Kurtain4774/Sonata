@@ -1,6 +1,3 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Settings from "@/models/Settings";
@@ -9,6 +6,7 @@ import {
   mergeWithDefaults,
   sanitizeSettingsPatch,
 } from "@/lib/settings";
+import { jsonError, jsonOk, readJsonBody, requireApiSession } from "@/lib/api";
 
 async function getCurrentUser(session) {
   await connectDB();
@@ -16,33 +14,29 @@ async function getCurrentUser(session) {
 }
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const { session, response } = await requireApiSession({ rejectRefreshError: false });
+  if (response) return response;
 
   const user = await getCurrentUser(session);
-  if (!user) return NextResponse.json({ settings: DEFAULT_SETTINGS });
+  if (!user) return jsonOk({ settings: DEFAULT_SETTINGS });
 
   let doc = await Settings.findOne({ userId: user._id }).lean();
   if (!doc) {
     doc = (await Settings.create({ userId: user._id })).toObject();
   }
-  return NextResponse.json({ settings: mergeWithDefaults(doc) });
+  return jsonOk({ settings: mergeWithDefaults(doc) });
 }
 
 export async function PUT(req) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  const { session, response } = await requireApiSession({ rejectRefreshError: false });
+  if (response) return response;
 
-  let body;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const { body, response: invalidJson } = await readJsonBody(req);
+  if (invalidJson) return invalidJson;
   const patch = sanitizeSettingsPatch(body);
 
   const user = await getCurrentUser(session);
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!user) return jsonError("User not found", 404);
 
   const doc = await Settings.findOneAndUpdate(
     { userId: user._id },
@@ -50,5 +44,5 @@ export async function PUT(req) {
     { new: true, upsert: true, setDefaultsOnInsert: true }
   ).lean();
 
-  return NextResponse.json({ settings: mergeWithDefaults(doc) });
+  return jsonOk({ settings: mergeWithDefaults(doc) });
 }
