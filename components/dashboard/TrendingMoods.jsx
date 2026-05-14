@@ -43,8 +43,9 @@ function SkeletonRow() {
 }
 
 export default function TrendingMoods({ onPickMood, data, loading }) {
-  const moods = data?.length ? data : FALLBACK_MOODS;
-  const isFeatured = !!(data?.length);
+  const realPlaylists = data?.playlists?.length ? data.playlists : null;
+  const moods = realPlaylists || FALLBACK_MOODS;
+  const isLive = !!realPlaylists;
 
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
@@ -52,9 +53,14 @@ export default function TrendingMoods({ onPickMood, data, loading }) {
         <div className="flex items-center gap-2">
           <HiSparkles className="text-violet-400" />
           <h3 className="text-sm font-semibold">
-            {isFeatured ? "Featured on Spotify" : "Explore Trending Moods"}
+            {isLive ? "Trending Today" : "Explore Trending Moods"}
           </h3>
         </div>
+        {isLive && (
+          <span className="text-[10px] uppercase tracking-wider text-neutral-500">
+            via Deezer
+          </span>
+        )}
       </div>
       <ul className="space-y-2">
         {loading
@@ -76,14 +82,14 @@ export default function TrendingMoods({ onPickMood, data, loading }) {
                     <div className="text-sm font-medium truncate">{m.name}</div>
                     <div className="text-[11px] text-neutral-500 truncate">{m.count}</div>
                   </div>
-                  {m.spotifyUrl ? (
+                  {m.externalUrl ? (
                     <a
-                      href={m.spotifyUrl}
+                      href={m.externalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="text-neutral-500 hover:text-green-400 transition-colors"
-                      aria-label="Open in Spotify"
+                      className="text-neutral-500 hover:text-violet-400 transition-colors"
+                      aria-label="Open source"
                     >
                       <FiExternalLink size={14} />
                     </a>

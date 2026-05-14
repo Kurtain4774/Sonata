@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { getStatsSummary } from "@/lib/stats";
 import { getRecentHistory } from "@/lib/history";
 import { getExploreItems } from "@/lib/explore";
-import { getFeaturedMoods } from "@/lib/spotify";
+import { getDeezerChart } from "@/lib/deezer";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +27,9 @@ export async function GET() {
       console.warn("/api/dashboard explore failed:", err?.message);
       return { items: [], page: 1, hasMore: false };
     }),
-    getFeaturedMoods(session.accessToken, 6).catch((err) => {
+    getDeezerChart(6).catch((err) => {
       console.warn("/api/dashboard moods failed:", err?.message);
-      return [];
+      return { playlists: [], tracks: [] };
     }),
   ]);
 

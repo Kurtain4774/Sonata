@@ -1,43 +1,66 @@
 # Sonata — AI Spotify Playlist Builder
 
-Always use the --frontend-design skill when working on the frontend
+Always use the --frontend-design skill when working on the frontend.
 
-Next.js 14 (App Router) + Tailwind CSS + MongoDB (Mongoose) + Google Gemini API + Spotify Web API + NextAuth.js + Vercel
+Next.js 14 (App Router, JS) + Tailwind + MongoDB (Mongoose) + Google Gemini + Spotify Web API + Deezer (preview fallback) + NextAuth + Vercel. Tests with Vitest; E2E with Playwright.
 
-## Routes
-- `/` — Landing page, login CTA, server component
-- `/dashboard` — Prompt input → Gemini recs → Spotify track matching → save playlist. Client component. Protected.
-- `/history` — Past prompts list with album art thumbnails. Protected.
-- `/history/[id]` — Playlist detail view, save/open in Spotify. Protected.
+## Pages
+- `/` — Landing (hero, demo, features, FAQ, floating albums). Server component.
+- `/dashboard` — Prompt → recs flow, plus widgets: NowPlaying, ListeningInsights, RecentHistory, TrendingMoods, CommunityPicks, RecommendedRow, StatTiles, TasteProfile. Protected.
+- `/explore` — Browse public/shared playlists. Protected.
+- `/your-music` — User's saved playlists + history. Protected.
+- `/stats` — Top tracks/artists, recently played, summary. Protected.
+- `/share/[id]` — Public shared prompt/playlist view.
+- `/privacy`, `/terms`, `/screenshots` — Static.
 
 ## API Routes
-- `/api/auth/[...nextauth]` — Spotify OAuth via NextAuth.js
-- `POST /api/recommend` — Prompt → Gemini → Spotify search → return matched tracks
-- `POST /api/playlist` — Create Spotify playlist + add tracks + save to MongoDB
-- `GET /api/history` — User's past prompts
-- `GET /api/history/[id]` — Single prompt detail
+- `auth/[...nextauth]` — Spotify OAuth (NextAuth)
+- `recommend` (POST) + `recommend/refine`, `similar`, `swap` — Gemini → Spotify match. Streamed, rate-limited.
+- `playlist` (POST, [id]) — Create Spotify playlist + persist Prompt doc
+- `history` (GET, [id]) — User prompt history
+- `dashboard` (GET) — Aggregated dashboard payload (featured playlists, widgets)
+- `spotify/playlists` — User's Spotify playlists (current playlists feature)
+- `landing-tracks` — Tracks for landing visuals
+- `now-playing`, `queue`, `playback/{play,next,previous,seek,volume}` — Web Playback control
+- `stats/{summary,top-tracks,top-artists,recently-played,preview}`
+- `explore` (+ `explore/share`), `share/[id]` — Public sharing
+- `settings` (GET/PUT, `settings/export`) — User preferences
 
 ## Flow
-Prompt → Gemini returns JSON `[{title, artist}]` (15 songs) → search Spotify `/v1/search` per song → return track objects (id, albumArt, previewUrl) → user saves → create playlist via Spotify API → store in MongoDB
-
-## Gemini System Prompt
-Return exactly 20 songs as JSON array with "title" and "artist" fields only. No explanation. Mix popular + deep cuts, span decades.
+Prompt → Gemini returns `[{title, artist}]` JSON (≈20) → per-song Spotify `/v1/search` (mapped via `spotifyTrackMapper`) → stream tracks (id, albumArt, previewUrl, Deezer fallback) → user saves → create Spotify playlist → store Prompt in Mongo. Refine/swap/similar reuse the same pipeline.
 
 ## DB Models
-**User**: spotifyId, displayName, email, profileImage, accessToken (encrypted), refreshToken (encrypted), tokenExpiry
-**Prompt**: userId (ref User), promptText, recommendations[{spotifyTrackId, title, artist, albumArt, previewUrl}], savedAsPlaylist, spotifyPlaylistId, spotifyPlaylistUrl, createdAt
+- **User** — spotifyId, displayName, email, profileImage, accessToken/refreshToken (encrypted via `lib/crypto`), tokenExpiry
+- **Prompt** — userId, promptText, recommendations[{spotifyTrackId,title,artist,albumArt,previewUrl}], savedAsPlaylist, spotifyPlaylistId/Url, shared flags, createdAt
+- **Settings** — Per-user preferences (UI/playback/privacy)
+- **PlayHistory** — Per-user track play log for taste profile & stats
 
 ## Key Components
-Navbar, PromptInput, VibeChips, TrackCard, TrackList, AudioPreview, PlaylistSaveButton, HistoryCard, AuthButton
+- Global: Navbar, ProfileMenu, AuthButton, Providers, ToastContext, SettingsContext, ErrorBoundary, OnboardingTour, GlobalMiniPlayer, AudioPreview(Provider), WebPlaybackProvider, SonataLogo
+- Prompt/Tracks: PromptInput, VibeChips, FineTuneControls, TrackCard, TrackList, PlaylistSaveButton, MergeModal, ShareToggle
+- Pages: DashboardClient, HistoryPageClient, HistoryCard, ExploreClient/ExploreCard, StatsClient, YourMusicClient, CurrentPlaylistsClient, SpotifyPlaylistCard
+- Dashboard widgets: HeroPromptCard, NowPlayingPanel, ListeningInsights, RecentHistoryWidget, RecommendedRow, TrendingMoods, CommunityPicks, StatTiles, TasteProfile, RefinementInput, ResultsSection, WidgetGroup
+- Playlist detail: PlaylistDetailClient, TrackTable, RefinePanel, SimilarSongsTab, HistoryTab, MoodFitPill
+- Landing: HeroSection, DemoSection, FeatureCards, HowItWorks, WhySonata, SpotifyIntegration, FAQSection, FinalCTA, FloatingAlbums, AlbumArt, DashboardPreview, LandingHeader, Footer
+- Settings: SettingsModal + `settings/tabs` + `settings/controls`
 
 ## Lib Helpers
-`lib/auth.js` (NextAuth config), `lib/mongodb.js` (DB connection), `lib/gemini.js` (Gemini API), `lib/spotify.js` (Spotify API)
+`auth`, `mongodb`, `crypto` (token enc), `gemini`, `spotify`, `spotifyApp` (app-token), `spotifyAuth`, `spotifyTrackMapper`, `deezer` (preview fallback), `history`, `stats`, `playHistory`, `tasteProfile`, `moodFit`, `explore`, `playlistCover`, `settings`, `rateLimit`, `stringSimilarity`. Co-located `*.test.js` files.
 
 ## Spotify Scopes
-user-read-private, user-read-email, playlist-modify-public, playlist-modify-private
+user-read-private, user-read-email, user-read-playback-state, user-modify-playback-state, user-read-currently-playing, user-read-recently-played, user-top-read, playlist-read-private, playlist-modify-public, playlist-modify-private, streaming
 
 ## Packages
-next, next-auth, mongoose, @google/generative-ai, tailwindcss, react-icons, framer-motion
+next 14, next-auth, mongoose, @google/generative-ai, tailwindcss, framer-motion, react-icons, @dnd-kit/{core,sortable,utilities}, canvas (cover gen). Dev: vitest, @vitest/ui, @testing-library/jest-dom, jsdom, @playwright/test.
+
+## Scripts
+`dev`, `build`, `start`, `lint`, `test` (vitest run), `test:watch`, `test:ui`, `screenshots:sonata`.
 
 ## Env
-SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, NEXTAUTH_URL, NEXTAUTH_SECRET, GEMINI_API_KEY, MONGODB_URI
+SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, NEXTAUTH_URL, NEXTAUTH_SECRET, GEMINI_API_KEY, MONGODB_URI, plus token encryption key consumed by `lib/crypto`.
+
+## Notes
+- Tokens stored encrypted; always refresh via `spotifyAuth` helper before Spotify calls.
+- Preview URLs: Spotify previews are unreliable — `lib/deezer` provides fallback in mapper.
+- Rate limiting is enforced on `/api/recommend` via `lib/rateLimit`.
+- Gemini system prompt: return JSON only (no prose), mix popular + deep cuts across decades.
