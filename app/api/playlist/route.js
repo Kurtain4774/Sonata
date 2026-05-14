@@ -8,8 +8,28 @@ import {
   createPlaylist,
   addTracksToPlaylist,
   SpotifyAuthError,
+  SpotifyApiError,
 } from "@/lib/spotify";
+import { withSpotifyRetry } from "@/lib/spotifyAuth";
 import { uploadPlaylistCover } from "@/lib/playlistCover";
+
+function spotifyForbiddenMessage(err) {
+  const detail = `${err.spotifyMessage || err.message || ""}`.toLowerCase();
+
+  if (detail.includes("insufficient client scope")) {
+    return "Spotify refused the request because your login is missing playlist write permission. Sign out, then sign back in so Spotify can ask for the updated permissions.";
+  }
+
+  if (
+    detail.includes("user may not be registered") ||
+    detail.includes("not registered") ||
+    detail.includes("development mode")
+  ) {
+    return "Spotify refused the request because this app is in Development Mode and this Spotify account is not allowlisted. Add the account under Spotify Developer Dashboard > User Management, or request Extended Quota Mode.";
+  }
+
+  return `Spotify refused the playlist save${err.spotifyMessage ? `: ${err.spotifyMessage}` : "."}`;
+}
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -55,15 +75,23 @@ export async function POST(req) {
       );
     }
 
-    const playlist = await createPlaylist(
-      session.accessToken,
-      session.spotifyId,
-      finalName,
-      description
+    const playlist = await withSpotifyRetry(session, (accessToken) =>
+      createPlaylist(
+        accessToken,
+        session.spotifyId,
+        finalName,
+        description
+      )
     );
-    await addTracksToPlaylist(session.accessToken, playlist.id, finalUris);
+    if (!playlist?.id) {
+      throw new Error(`Playlist created but missing id - full response: ${JSON.stringify(playlist)}`);
+    }
 
-    // Fire-and-forget: generate + upload 2x2 mosaic cover from first 4 album art images
+    await withSpotifyRetry(session, (accessToken) =>
+      addTracksToPlaylist(accessToken, playlist.id, finalUris)
+    );
+
+    // Fire-and-forget: generate + upload 2x2 mosaic cover from first 4 album art images.
     const albumArtUrls = (tracks || promptDoc?.recommendations || [])
       .map((t) => t.albumArt)
       .filter(Boolean)
@@ -87,16 +115,19 @@ export async function POST(req) {
   } catch (err) {
     if (err instanceof SpotifyAuthError) {
       return NextResponse.json(
-        { error: "Spotify session expired — please log in again." },
+        { error: "Spotify session expired - please log in again." },
         { status: 401 }
       );
     }
-    if (err.message?.includes("403")) {
+
+    if (err instanceof SpotifyApiError && err.status === 403) {
+      console.warn("Spotify playlist save forbidden:", err.spotifyMessage || err.message);
       return NextResponse.json(
-        { error: "Spotify refused the request (403) — try signing out and back in to refresh permissions." },
+        { error: spotifyForbiddenMessage(err) },
         { status: 403 }
       );
     }
+
     console.error("/api/playlist failed", err);
     return NextResponse.json({ error: "Playlist save failed" }, { status: 500 });
   }

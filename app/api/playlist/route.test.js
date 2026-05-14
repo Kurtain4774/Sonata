@@ -10,6 +10,16 @@ vi.mock("@/lib/spotify", () => ({
   createPlaylist: vi.fn(),
   addTracksToPlaylist: vi.fn().mockResolvedValue(undefined),
   SpotifyAuthError: class SpotifyAuthError extends Error {},
+  SpotifyApiError: class SpotifyApiError extends Error {
+    constructor(message, { status, spotifyMessage } = {}) {
+      super(message);
+      this.status = status;
+      this.spotifyMessage = spotifyMessage;
+    }
+  },
+}));
+vi.mock("@/lib/spotifyAuth", () => ({
+  withSpotifyRetry: vi.fn((_session, fn) => fn(_session.accessToken)),
 }));
 vi.mock("@/lib/playlistCover", () => ({
   uploadPlaylistCover: vi.fn().mockResolvedValue(undefined),
@@ -92,5 +102,38 @@ describe("POST /api/playlist", () => {
     spotify.createPlaylist.mockRejectedValue(new spotify.SpotifyAuthError("nope"));
     const res = await POST(makeReq({ name: "n", trackUris: ["u"] }));
     expect(res.status).toBe(401);
+  });
+
+  it("403 explains missing Spotify playlist scope", async () => {
+    User.findOne.mockResolvedValue({ _id: "uid" });
+    spotify.createPlaylist.mockRejectedValue(
+      new spotify.SpotifyApiError("forbidden", {
+        status: 403,
+        spotifyMessage: "Insufficient client scope",
+      })
+    );
+
+    const res = await POST(makeReq({ name: "n", trackUris: ["u"] }));
+    const data = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(data.error).toContain("missing playlist write permission");
+  });
+
+  it("403 explains Spotify development mode allowlist failures", async () => {
+    User.findOne.mockResolvedValue({ _id: "uid" });
+    spotify.createPlaylist.mockRejectedValue(
+      new spotify.SpotifyApiError("forbidden", {
+        status: 403,
+        spotifyMessage: "User may not be registered",
+      })
+    );
+
+    const res = await POST(makeReq({ name: "n", trackUris: ["u"] }));
+    const data = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(data.error).toContain("Development Mode");
+    expect(data.error).toContain("User Management");
   });
 });
