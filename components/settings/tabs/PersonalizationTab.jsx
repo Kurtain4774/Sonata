@@ -2,8 +2,6 @@
 
 import { useSettings, useUpdateSettings } from "../../SettingsContext";
 import Toggle from "../controls/Toggle";
-import Select from "../controls/Select";
-import { LANGUAGE_OPTIONS, REGION_OPTIONS } from "@/lib/settings";
 
 export default function PersonalizationTab() {
   const settings = useSettings();
@@ -28,20 +26,6 @@ export default function PersonalizationTab() {
         description="Show 30-second preview play buttons. When off, only Spotify links are shown."
         checked={settings.enableDeezerPreviews}
         onChange={(v) => update({ enableDeezerPreviews: v })}
-      />
-      <Select
-        label="Language preference"
-        description="Bias the AI toward songs in a particular language."
-        value={settings.languagePreference}
-        onChange={(v) => update({ languagePreference: v })}
-        options={LANGUAGE_OPTIONS}
-      />
-      <Select
-        label="Region"
-        description="Bias the AI toward music from a particular region."
-        value={settings.regionPreference}
-        onChange={(v) => update({ regionPreference: v })}
-        options={REGION_OPTIONS}
       />
     </div>
   );

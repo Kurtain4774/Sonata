@@ -9,8 +9,6 @@ import {
   FiZap,
   FiTrendingUp,
   FiClock,
-  FiChevronDown,
-  FiChevronUp,
 } from "react-icons/fi";
 
 const SHORTCUTS = [
@@ -31,8 +29,6 @@ export default function RefinePanel({
   const [staged, setStaged] = useState(() => new Set());
   const [excluded, setExcluded] = useState(initialExcludedArtists);
   const [artistQuery, setArtistQuery] = useState("");
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-
   const suggestions = useMemo(() => {
     const q = artistQuery.trim().toLowerCase();
     if (!q) return [];
@@ -200,20 +196,6 @@ export default function RefinePanel({
           )}
         </section>
 
-        <section>
-          <button
-            onClick={() => setAdvancedOpen((v) => !v)}
-            className="w-full flex items-center justify-between py-2 text-sm font-semibold text-neutral-200"
-          >
-            <span>Advanced Options</span>
-            {advancedOpen ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
-          </button>
-          {advancedOpen && (
-            <p className="text-xs text-neutral-500 mt-1">
-              More options coming soon.
-            </p>
-          )}
-        </section>
       </div>
 
       <div className="border-t border-neutral-800 p-4 bg-neutral-950/40">

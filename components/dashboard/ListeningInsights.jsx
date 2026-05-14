@@ -1,24 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo } from "react";
 import Link from "next/link";
 import { HiSparkles } from "react-icons/hi";
 
-export default function ListeningInsights() {
-  const [data, setData] = useState(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/stats/summary")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        setData(d);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
-
-  if (!loaded) {
+function ListeningInsights({ data, loading }) {
+  if (loading && !data) {
     return (
       <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 animate-pulse">
         <div className="flex items-center justify-between mb-4">
@@ -47,7 +34,6 @@ export default function ListeningInsights() {
   const topGenres = data?.topGenres || [];
   const dominant = topGenres[0];
 
-  // Donut: SVG ring with stroke-dasharray showing dominant %
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const dashShown = dominant ? (dominant.percent / 100) * circumference : 0;
@@ -127,3 +113,5 @@ export default function ListeningInsights() {
     </section>
   );
 }
+
+export default memo(ListeningInsights);

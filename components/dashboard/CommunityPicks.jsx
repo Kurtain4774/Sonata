@@ -1,34 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo } from "react";
 import Link from "next/link";
-import { FaPlay } from "react-icons/fa";
 import { FiUsers } from "react-icons/fi";
 
-export default function CommunityPicks() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    fetch("/api/explore?page=1", { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : { items: [] }))
-      .then((d) => {
-        if (active) setItems((d.items || []).slice(0, 3));
-      })
-      .catch((err) => {
-        if (active && err.name !== "AbortError") setItems([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, []);
+function CommunityPicks({ data, loading }) {
+  const items = (data?.items || []).slice(0, 3);
+  const isLoading = loading && !data;
 
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
@@ -42,14 +20,14 @@ export default function CommunityPicks() {
         </Link>
       </div>
 
-      {loading && (
+      {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-14 rounded-lg bg-neutral-900 animate-pulse" />
           ))}
         </div>
       )}
-      {!loading && !items.length && (
+      {!isLoading && !items.length && (
         <p className="text-sm text-neutral-500">No shared playlists yet.</p>
       )}
       <ul className="space-y-2">
@@ -57,7 +35,8 @@ export default function CommunityPicks() {
           <li key={p.id}>
             <Link
               href={`/share/${p.id}`}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-900 transition-colors"
+              aria-label={`Open "${p.promptText}" by @${p.username}, ${p.trackCount || 0} tracks`}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-900 transition-colors focus-visible:ring-2 focus-visible:ring-spotify focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus:outline-none"
             >
               <div className="w-10 h-10 rounded-full bg-neutral-800 overflow-hidden flex-shrink-0 flex items-center justify-center">
                 {p.thumbnails?.[0] ? (
@@ -74,14 +53,6 @@ export default function CommunityPicks() {
               <span className="text-[11px] text-neutral-500 hidden sm:inline tabular-nums">
                 ▷ {p.trackCount || 0}
               </span>
-              <button
-                type="button"
-                aria-label="Play"
-                onClick={(e) => e.preventDefault()}
-                className="w-8 h-8 rounded-full border border-neutral-700 flex items-center justify-center text-neutral-300 hover:bg-spotify hover:text-black hover:border-transparent transition"
-              >
-                <FaPlay className="text-[10px] ml-0.5" />
-              </button>
             </Link>
           </li>
         ))}
@@ -89,3 +60,5 @@ export default function CommunityPicks() {
     </section>
   );
 }
+
+export default memo(CommunityPicks);

@@ -9,7 +9,8 @@ import {
   useState,
 } from "react";
 import { useSession } from "next-auth/react";
-import { ACCENT_COLORS, DEFAULT_SETTINGS } from "@/lib/settings";
+import { ACCENT_COLORS, DEFAULT_SETTINGS, sanitizeSettingsPatch } from "@/lib/settings";
+import { useToast } from "./ToastContext";
 
 const STORAGE_KEY = "sonata-settings-cache";
 
@@ -62,11 +63,13 @@ function applyDocumentSettings(settings) {
 
 export function SettingsProvider({ children }) {
   const { status } = useSession();
+  const toast = useToast();
   const [settings, setSettings] = useState(() => readCache() || DEFAULT_SETTINGS);
   const [ready, setReady] = useState(false);
   const lastConfirmedRef = useRef(settings);
   const pendingPatchRef = useRef({});
   const flushTimerRef = useRef(null);
+  const retryAttemptRef = useRef(0);
 
   // Apply on mount + whenever settings change
   useEffect(() => {
@@ -125,16 +128,29 @@ export function SettingsProvider({ children }) {
       const data = await res.json();
       const merged = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
       lastConfirmedRef.current = merged;
+      retryAttemptRef.current = 0;
     } catch {
-      // Revert to last confirmed
+      if (retryAttemptRef.current < 1) {
+        retryAttemptRef.current += 1;
+        pendingPatchRef.current = { ...patch, ...pendingPatchRef.current };
+        flushTimerRef.current = setTimeout(flush, 1500);
+        return;
+      }
+      retryAttemptRef.current = 0;
       setSettings(lastConfirmedRef.current);
+      toast({
+        type: "error",
+        message: "Couldn't save settings. Reverted to last saved values.",
+      });
     }
-  }, []);
+  }, [toast]);
 
   const updateSettings = useCallback(
     (patch) => {
-      setSettings((prev) => ({ ...prev, ...patch }));
-      pendingPatchRef.current = { ...pendingPatchRef.current, ...patch };
+      const clean = sanitizeSettingsPatch(patch);
+      if (!Object.keys(clean).length) return;
+      setSettings((prev) => ({ ...prev, ...clean }));
+      pendingPatchRef.current = { ...pendingPatchRef.current, ...clean };
       if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
       flushTimerRef.current = setTimeout(flush, 300);
     },

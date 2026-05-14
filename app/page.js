@@ -1,12 +1,14 @@
+import dynamic from "next/dynamic";
 import LandingHeader from "@/components/landing/LandingHeader";
 import HeroSection from "@/components/landing/HeroSection";
-import HowItWorks from "@/components/landing/HowItWorks";
-import DemoSection from "@/components/landing/DemoSection";
-import WhySonata from "@/components/landing/WhySonata";
-import SpotifyIntegration from "@/components/landing/SpotifyIntegration";
-import FAQSection from "@/components/landing/FAQSection";
-import FinalCTA from "@/components/landing/FinalCTA";
 import Footer from "@/components/landing/Footer";
+
+const HowItWorks = dynamic(() => import("@/components/landing/HowItWorks"));
+const DemoSection = dynamic(() => import("@/components/landing/DemoSection"));
+const WhySonata = dynamic(() => import("@/components/landing/WhySonata"));
+const SpotifyIntegration = dynamic(() => import("@/components/landing/SpotifyIntegration"));
+const FAQSection = dynamic(() => import("@/components/landing/FAQSection"));
+const FinalCTA = dynamic(() => import("@/components/landing/FinalCTA"));
 
 export default function Landing() {
   return (

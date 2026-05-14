@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FaSpotify, FaPlay } from "react-icons/fa";
-import { FiLink } from "react-icons/fi";
+import { FiLink, FiZap } from "react-icons/fi";
 import ShareToggle from "./ShareToggle";
 import { useSettings } from "./SettingsContext";
 import { useToast } from "./ToastContext";
+
+const SPOTIFY_TRACK_WARN_THRESHOLD = 100;
 
 export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, initialSaved, initialUrl, initialShared = false }) {
   const [status, setStatus] = useState(initialSaved ? "saved" : "idle");
@@ -14,13 +16,11 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
   const [queueStatus, setQueueStatus] = useState("idle");
   const [queueMessage, setQueueMessage] = useState(null);
   const [shareStatus, setShareStatus] = useState("idle");
-  const [autoSaveToast, setAutoSaveToast] = useState(false);
   const settings = useSettings();
   const toast = useToast();
   const autoSaveFiredRef = useRef(false);
 
   const save = async () => {
-    // Optimistic: flip to "saved" immediately, reconcile on failure.
     setStatus("saved");
     setError(null);
     try {
@@ -32,12 +32,24 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
       setUrl(data.playlistUrl);
+      return true;
     } catch (err) {
       setError(err.message);
       setStatus("idle");
       setUrl(null);
       toast({ type: "error", message: `Couldn't save: ${err.message}` });
+      return false;
     }
+  };
+
+  const handleSaveClick = () => {
+    if (trackUris && trackUris.length > SPOTIFY_TRACK_WARN_THRESHOLD) {
+      const ok = window.confirm(
+        `This playlist has ${trackUris.length} tracks. Spotify will add them in batches — this may take a few seconds. Continue?`
+      );
+      if (!ok) return;
+    }
+    save();
   };
 
   useEffect(() => {
@@ -47,9 +59,8 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
     if (!trackUris || trackUris.length === 0) return;
     autoSaveFiredRef.current = true;
     (async () => {
-      await save();
-      setAutoSaveToast(true);
-      setTimeout(() => setAutoSaveToast(false), 3500);
+      const ok = await save();
+      if (ok) toast({ type: "success", message: "Auto-saved to Spotify" });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.autoSaveToSpotify, trackUris, status]);
@@ -130,12 +141,22 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
             </span>
           )
         ) : (
-          <button
-            onClick={save}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-spotify hover:brightness-110 text-black font-semibold"
-          >
-            <FaSpotify /> Save to Spotify
-          </button>
+          <div className="flex items-center gap-2">
+            {settings.autoSaveToSpotify && (
+              <span
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-spotify/10 border border-spotify/40 text-spotify text-[11px] font-semibold uppercase tracking-wide"
+                title="Auto-save to Spotify is enabled in Settings"
+              >
+                <FiZap className="w-3 h-3" /> Auto-save on
+              </span>
+            )}
+            <button
+              onClick={handleSaveClick}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-spotify hover:brightness-110 text-black font-semibold"
+            >
+              <FaSpotify /> Save to Spotify
+            </button>
+          </div>
         )}
 
         {status === "saved" && promptId && (
@@ -162,9 +183,6 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
         <span className={`text-sm ${queueMessage.type === "success" ? "text-green-300" : "text-amber-300"}`}>
           {queueMessage.text}
         </span>
-      )}
-      {autoSaveToast && (
-        <span className="text-sm text-spotify">Auto-saved to Spotify</span>
       )}
     </div>
   );

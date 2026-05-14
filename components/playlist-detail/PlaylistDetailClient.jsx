@@ -14,9 +14,9 @@ import {
   FiSliders,
   FiTrash2,
   FiRepeat,
-  FiEyeOff,
   FiX,
   FiChevronDown,
+  FiPlusCircle,
 } from "react-icons/fi";
 import { FaSpotify } from "react-icons/fa";
 import TrackTable from "./TrackTable";
@@ -24,6 +24,7 @@ import RefinePanel from "./RefinePanel";
 import HistoryTab from "./HistoryTab";
 import SimilarSongsTab from "./SimilarSongsTab";
 import MergeModal from "@/components/MergeModal";
+import { useToast } from "@/components/ToastContext";
 
 function formatDate(d) {
   return new Date(d).toLocaleDateString(undefined, {
@@ -47,10 +48,10 @@ const TABS = [
   { id: "tracks", label: "Tracks" },
   { id: "similar", label: "Similar Songs" },
   { id: "history", label: "History" },
-  { id: "settings", label: "Settings" },
 ];
 
 export default function PlaylistDetailClient({ playlist }) {
+  const toast = useToast();
   const [tracks, setTracks] = useState(playlist.recommendations || []);
   const [name, setName] = useState(playlist.playlistName || playlist.promptText);
   const [description, setDescription] = useState(
@@ -73,6 +74,7 @@ export default function PlaylistDetailClient({ playlist }) {
 
   const [showMerge, setShowMerge] = useState(false);
   const [replaceMenuOpen, setReplaceMenuOpen] = useState(false);
+  const [savingSelection, setSavingSelection] = useState(false);
 
   const [savedAsPlaylist, setSavedAsPlaylist] = useState(playlist.savedAsPlaylist);
   const [playlistUrl, setPlaylistUrl] = useState(playlist.spotifyPlaylistUrl);
@@ -174,6 +176,24 @@ export default function PlaylistDetailClient({ playlist }) {
     }
   }
 
+  async function reorderTracks(activeUri, overUri) {
+    if (activeUri === overUri) return;
+    const fromIdx = tracks.findIndex((t) => t.uri === activeUri);
+    const toIdx = tracks.findIndex((t) => t.uri === overUri);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = tracks.slice();
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    const prev = tracks;
+    setTracks(next);
+    try {
+      await persistPatch({ reorderUris: next.map((t) => t.uri).filter(Boolean) });
+    } catch (err) {
+      setTracks(prev);
+      toast({ type: "error", message: err.message || "Couldn't save new order" });
+    }
+  }
+
   async function replaceSelectedWithNew() {
     const sel = selectedTracks;
     if (!sel.length) return;
@@ -272,6 +292,40 @@ export default function PlaylistDetailClient({ playlist }) {
       setEditingMeta(false);
     } catch (err) {
       alert(err.message);
+    }
+  }
+
+  async function saveSelectionAsNewPlaylist() {
+    const sel = selectedTracks;
+    if (!sel.length || savingSelection) return;
+    const defaultName = `Selection from ${name}`.slice(0, 100);
+    const input = window.prompt("New Spotify playlist name:", defaultName);
+    if (!input) return;
+    const newName = input.trim();
+    if (!newName) return;
+    setSavingSelection(true);
+    try {
+      const res = await fetch("/api/playlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          description: `Selected from "${name}" — built with Sonata`,
+          trackUris: sel.map((t) => t.uri).filter(Boolean),
+          tracks: sel,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      toast({
+        type: "success",
+        message: `Saved ${sel.length} track${sel.length !== 1 ? "s" : ""} to a new Spotify playlist.`,
+      });
+      clearSelection();
+    } catch (err) {
+      toast({ type: "error", message: err.message || "Couldn't save selection" });
+    } finally {
+      setSavingSelection(false);
     }
   }
 
@@ -558,11 +612,13 @@ export default function PlaylistDetailClient({ playlist }) {
                       )}
                     </div>
                     <button
-                      disabled
-                      title="Coming soon"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-violet-400/60 text-sm font-medium cursor-not-allowed"
+                      onClick={saveSelectionAsNewPlaylist}
+                      disabled={savingSelection}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-spotify hover:bg-spotify/10 text-sm font-medium transition disabled:opacity-50"
+                      title="Create a new Spotify playlist from these tracks"
                     >
-                      <FiEyeOff className="w-4 h-4" /> Keep Hidden
+                      <FiPlusCircle className="w-4 h-4" />
+                      {savingSelection ? "Saving…" : "Save as new playlist"}
                     </button>
                     <button
                       onClick={clearSelection}
@@ -585,6 +641,7 @@ export default function PlaylistDetailClient({ playlist }) {
                 onToggleSelection={toggleSelection}
                 onToggleAll={toggleAllVisible}
                 onRemoveOne={removeOne}
+                onReorder={search.trim() ? undefined : reorderTracks}
                 page={page}
                 onPageChange={setPage}
                 rowsPerPage={rowsPerPage}
@@ -609,12 +666,6 @@ export default function PlaylistDetailClient({ playlist }) {
           {tab === "history" && (
             <div className="mt-2">
               <HistoryTab history={history} />
-            </div>
-          )}
-
-          {tab === "settings" && (
-            <div className="py-16 text-center text-neutral-500 text-sm">
-              Playlist settings coming soon.
             </div>
           )}
         </section>

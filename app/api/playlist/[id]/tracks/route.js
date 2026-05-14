@@ -32,6 +32,7 @@ export async function PATCH(req, { params }) {
     replaceMap,
     refinement,
     replaceAll,
+    reorderUris,
   } = body || {};
 
   try {
@@ -46,6 +47,21 @@ export async function PATCH(req, { params }) {
 
     if (Array.isArray(replaceAll)) {
       recs = replaceAll;
+    } else if (Array.isArray(reorderUris)) {
+      const byUri = new Map(recs.map((t) => [t.uri, t]));
+      const reordered = [];
+      const seen = new Set();
+      for (const uri of reorderUris) {
+        const t = byUri.get(uri);
+        if (t && !seen.has(uri)) {
+          reordered.push(t);
+          seen.add(uri);
+        }
+      }
+      for (const t of recs) {
+        if (t.uri && !seen.has(t.uri)) reordered.push(t);
+      }
+      recs = reordered;
     } else {
       if (Array.isArray(removeUris) && removeUris.length) {
         const set = new Set(removeUris);
@@ -84,7 +100,7 @@ export async function PATCH(req, { params }) {
 
     if (doc.savedAsPlaylist && doc.spotifyPlaylistId) {
       try {
-        if (Array.isArray(replaceAll) || replaceMap) {
+        if (Array.isArray(replaceAll) || replaceMap || Array.isArray(reorderUris)) {
           const uris = recs.map((t) => t.uri).filter(Boolean);
           await replacePlaylistTracks(session.accessToken, doc.spotifyPlaylistId, uris);
         } else {

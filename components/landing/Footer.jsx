@@ -1,18 +1,9 @@
 import Link from 'next/link'
-import { FaTwitter, FaDiscord, FaGithub } from 'react-icons/fa'
 import SonataLogo from '@/components/SonataLogo'
 
 const navLinks = [
-  { label: 'About', href: '#' },
-  { label: 'Privacy Policy', href: '#' },
-  { label: 'Terms of Service', href: '#' },
-  { label: 'Contact', href: '#' },
-]
-
-const socials = [
-  { icon: FaTwitter, label: 'Twitter', href: '#' },
-  { icon: FaDiscord, label: 'Discord', href: '#' },
-  { icon: FaGithub, label: 'GitHub', href: '#' },
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Terms of Service', href: '/terms' },
 ]
 
 export default function Footer() {
@@ -46,24 +37,9 @@ export default function Footer() {
         {/* Divider */}
         <div className="border-t border-white/[0.07] mb-10" />
 
-        {/* Middle row: socials + attribution */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
-          {/* Social icons */}
-          <div className="flex items-center gap-4">
-            {socials.map(({ icon: Icon, label, href }) => (
-              <Link
-                key={label}
-                href={href}
-                aria-label={label}
-                className="w-9 h-9 rounded-full border border-white/10 bg-white/[0.05] flex items-center justify-center text-neutral-500 hover:text-white hover:border-white/20 hover:bg-white/10 transition-all"
-              >
-                <Icon className="text-sm" />
-              </Link>
-            ))}
-          </div>
-
-          {/* Attribution */}
-          <p className="text-neutral-600 text-sm text-center md:text-right">
+        {/* Middle row: attribution */}
+        <div className="flex justify-center mb-10">
+          <p className="text-neutral-600 text-sm text-center">
             Built for music lovers. Backed by AI.{' '}
             <span className="text-neutral-700">· Spotify · Google Gemini</span>
           </p>

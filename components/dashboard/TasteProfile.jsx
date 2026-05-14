@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo } from "react";
 
 const TAG_STYLES = {
   Melodic: "bg-pink-500/15 text-pink-300 border-pink-500/30",
@@ -13,25 +13,8 @@ const TAG_STYLES = {
   Lyrical: "bg-sky-500/15 text-sky-300 border-sky-500/30",
 };
 
-export default function TasteProfile() {
-  const [tags, setTags] = useState([]);
-  const [count, setCount] = useState(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/stats/summary")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d) {
-          setTags(d.tasteTags || []);
-          setCount(d.savedPlaylists ?? null);
-        }
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
-
-  if (!loaded) {
+function TasteProfile({ data, loading }) {
+  if (loading && !data) {
     return (
       <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 animate-pulse">
         <div className="h-3.5 w-28 bg-neutral-800 rounded mb-2" />
@@ -44,6 +27,9 @@ export default function TasteProfile() {
       </section>
     );
   }
+
+  const tags = data?.tasteTags || [];
+  const count = data?.savedPlaylists ?? null;
 
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5">
@@ -64,3 +50,5 @@ export default function TasteProfile() {
     </section>
   );
 }
+
+export default memo(TasteProfile);

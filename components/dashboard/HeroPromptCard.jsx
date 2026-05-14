@@ -27,7 +27,7 @@ export default function HeroPromptCard({
   return (
     <section className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-gradient-to-br from-neutral-950 via-neutral-900 to-emerald-950/30 shadow-spotify-glow">
       <div className="pointer-events-none absolute -top-24 -left-16 w-64 h-64 rounded-full bg-spotify/20 blur-3xl" />
-      <div className="relative grid grid-cols-1 md:grid-cols-2 gap-6 p-6 md:p-8">
+      <div className="relative grid grid-cols-1 xl:grid-cols-2 gap-6 p-6 md:p-8">
         {/* Left: headline */}
         <div className="flex flex-col justify-center">
           <HiSparkles className="text-spotify text-2xl mb-3" />

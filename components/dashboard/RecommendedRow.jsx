@@ -1,46 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useMemo, useRef } from "react";
 import Link from "next/link";
 import { FaPlay } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi";
 import { FiChevronRight } from "react-icons/fi";
 import { useWebPlayback } from "../WebPlaybackProvider";
 
-export default function RecommendedRow() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+function RecommendedRow({ data, loading }) {
   const scrollRef = useRef(null);
   const wb = useWebPlayback();
 
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    fetch("/api/history", { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : { prompts: [] }))
-      .then((d) => {
-        if (!active) return;
-        const saved = (d.prompts || []).filter((p) => p.savedAsPlaylist).slice(0, 10);
-        setItems(saved.length ? saved : (d.prompts || []).slice(0, 10));
-      })
-      .catch((err) => {
-        if (active && err.name !== "AbortError") setItems([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+  const items = useMemo(() => {
+    const prompts = data?.prompts || [];
+    const saved = prompts.filter((p) => p.savedAsPlaylist).slice(0, 10);
+    return saved.length ? saved : prompts.slice(0, 10);
+  }, [data]);
 
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, []);
+  const isLoading = loading && !data;
 
   const scrollRight = () => {
     scrollRef.current?.scrollBy({ left: 320, behavior: "smooth" });
   };
 
-  if (!loading && !items.length) return null;
+  if (!isLoading && !items.length) return null;
 
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
@@ -63,7 +46,7 @@ export default function RecommendedRow() {
           className="flex gap-4 overflow-x-auto scroll-smooth snap-x pb-2 -mx-1 px-1"
           style={{ scrollbarWidth: "thin" }}
         >
-          {loading &&
+          {isLoading &&
             Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
@@ -76,7 +59,7 @@ export default function RecommendedRow() {
                 </div>
               </div>
             ))}
-          {!loading &&
+          {!isLoading &&
             items.map((p, idx) => (
               <RecCard key={p.id} item={p} isNew={idx === 0} wb={wb} />
             ))}
@@ -130,3 +113,5 @@ function RecCard({ item, isNew, wb }) {
     </div>
   );
 }
+
+export default memo(RecommendedRow);

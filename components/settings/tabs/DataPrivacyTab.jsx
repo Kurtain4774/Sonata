@@ -68,7 +68,7 @@ export default function DataPrivacyTab({ user, onClose }) {
           onClick={exportData}
           className="px-4 py-2 rounded-md bg-neutral-800 hover:bg-neutral-700 text-sm text-neutral-100"
         >
-          Download soundsage-export.json
+          Download sonata-export.json
         </button>
       </div>
 

@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import Prompt from "@/models/Prompt";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +19,16 @@ async function fetchAsDataUrl(url) {
   }
 }
 
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "anon";
+  const rl = rateLimit(`og:${ip}`, { limit: 30, windowMs: 60_000 });
+  if (!rl.ok) {
+    return new Response("Too many requests", {
+      status: 429,
+      headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) },
+    });
+  }
+
   if (!mongoose.isValidObjectId(params.id)) {
     return new Response("Not found", { status: 404 });
   }
@@ -106,7 +116,7 @@ export async function GET(_req, { params }) {
                 marginTop: "4px",
               }}
             >
-              {trackCount} tracks · soundsage.vercel.app
+              {trackCount} tracks · sonata.vercel.app
             </div>
           </div>
 

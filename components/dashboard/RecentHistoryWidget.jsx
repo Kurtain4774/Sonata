@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo } from "react";
 import Link from "next/link";
-import { FaPlay } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi";
-import { FiMoreVertical, FiClock } from "react-icons/fi";
+import { FiClock } from "react-icons/fi";
 
 function relativeTime(dateStr) {
   if (!dateStr) return "";
@@ -20,30 +19,9 @@ function relativeTime(dateStr) {
   return d.toLocaleDateString();
 }
 
-export default function RecentHistoryWidget() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    fetch("/api/history", { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : { prompts: [] }))
-      .then((d) => {
-        if (active) setItems((d.prompts || []).slice(0, 4));
-      })
-      .catch((err) => {
-        if (active && err.name !== "AbortError") setItems([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, []);
+function RecentHistoryWidget({ data, loading }) {
+  const items = (data?.prompts || []).slice(0, 4);
+  const isLoading = loading && !data;
 
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
@@ -57,14 +35,14 @@ export default function RecentHistoryWidget() {
         </Link>
       </div>
 
-      {loading && (
+      {isLoading && (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-12 rounded-lg bg-neutral-900 animate-pulse" />
           ))}
         </div>
       )}
-      {!loading && !items.length && (
+      {!isLoading && !items.length && (
         <p className="text-sm text-neutral-500">No history yet — generate a playlist to begin.</p>
       )}
       <ul className="space-y-1">
@@ -72,7 +50,8 @@ export default function RecentHistoryWidget() {
           <li key={p.id}>
             <Link
               href={`/your-music/${p.id}`}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-900 transition-colors group"
+              aria-label={`Open ${p.playlistName || p.promptText}, ${relativeTime(p.createdAt)}`}
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-900 transition-colors group focus-visible:ring-2 focus-visible:ring-spotify focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus:outline-none"
             >
               <div className="w-9 h-9 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center flex-shrink-0">
                 <HiSparkles className="text-spotify text-sm" />
@@ -83,22 +62,6 @@ export default function RecentHistoryWidget() {
                   {relativeTime(p.createdAt)}
                 </div>
               </div>
-              <button
-                type="button"
-                aria-label="Play"
-                onClick={(e) => e.preventDefault()}
-                className="w-8 h-8 rounded-full border border-neutral-700 flex items-center justify-center text-neutral-300 hover:bg-spotify hover:text-black hover:border-transparent transition"
-              >
-                <FaPlay className="text-[10px] ml-0.5" />
-              </button>
-              <button
-                type="button"
-                aria-label="More"
-                onClick={(e) => e.preventDefault()}
-                className="text-neutral-500 hover:text-white"
-              >
-                <FiMoreVertical />
-              </button>
             </Link>
           </li>
         ))}
@@ -106,3 +69,5 @@ export default function RecentHistoryWidget() {
     </section>
   );
 }
+
+export default memo(RecentHistoryWidget);

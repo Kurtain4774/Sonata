@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo } from "react";
 import { FaMusic, FaHeart, FaFire, FaWaveSquare } from "react-icons/fa";
 import { FiClock } from "react-icons/fi";
 
@@ -41,23 +41,10 @@ function TileSkeleton() {
   );
 }
 
-export default function StatTiles() {
-  const [data, setData] = useState(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/stats/summary")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        setData(d);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
-
-  if (!loaded) {
+function StatTiles({ data, loading }) {
+  if (loading && !data) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <TileSkeleton key={i} />
         ))}
@@ -76,7 +63,7 @@ export default function StatTiles() {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
       <Tile
         icon={<FaMusic className="text-spotify" />}
         iconBg="bg-spotify/10"
@@ -117,3 +104,5 @@ export default function StatTiles() {
     </div>
   );
 }
+
+export default memo(StatTiles);

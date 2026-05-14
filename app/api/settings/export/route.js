@@ -5,6 +5,7 @@ import User from "@/models/User";
 import Prompt from "@/models/Prompt";
 import Settings from "@/models/Settings";
 import { mergeWithDefaults } from "@/lib/settings";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -13,6 +14,20 @@ export async function GET() {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  const rl = rateLimit(`export:${session.spotifyId}`, { limit: 5, windowMs: 60_000 });
+  if (!rl.ok) {
+    return new Response(
+      JSON.stringify({ error: "Too many export requests. Try again shortly." }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)),
+        },
+      }
+    );
   }
 
   await connectDB();
@@ -56,7 +71,7 @@ export async function GET() {
     status: 200,
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": 'attachment; filename="soundsage-export.json"',
+      "Content-Disposition": 'attachment; filename="sonata-export.json"',
     },
   });
 }
