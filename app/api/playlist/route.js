@@ -91,6 +91,12 @@ export async function POST(req) {
         { status: 401 }
       );
     }
+    if (err.message?.includes("403")) {
+      return NextResponse.json(
+        { error: "Spotify refused the request (403) — try signing out and back in to refresh permissions." },
+        { status: 403 }
+      );
+    }
     console.error("/api/playlist failed", err);
     return NextResponse.json({ error: "Playlist save failed" }, { status: 500 });
   }

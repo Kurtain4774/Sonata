@@ -122,14 +122,14 @@ export default function NowPlayingPanel() {
       </div>
 
       {!track ? (
-        <div className="aspect-square rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-center px-6">
+        <div className="h-[180px] rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-center px-6">
           <p className="text-sm text-neutral-500">
             Nothing playing on Spotify right now.
           </p>
         </div>
       ) : (
         <>
-          <div className="aspect-square rounded-xl overflow-hidden bg-neutral-800 mb-3">
+          <div className="h-[180px] rounded-xl overflow-hidden bg-neutral-800 mb-3">
             {track.albumArt ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={track.albumArt} alt="" className="w-full h-full object-cover" />

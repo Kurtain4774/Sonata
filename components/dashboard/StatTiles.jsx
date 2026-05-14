@@ -44,7 +44,7 @@ function TileSkeleton() {
 function StatTiles({ data, loading }) {
   if (loading && !data) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-5 gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <TileSkeleton key={i} />
         ))}
@@ -63,7 +63,7 @@ function StatTiles({ data, loading }) {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-5 gap-3">
       <Tile
         icon={<FaMusic className="text-spotify" />}
         iconBg="bg-spotify/10"

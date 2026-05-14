@@ -280,8 +280,8 @@ export default function DashboardClient() {
     <WebPlaybackProvider>
       <OnboardingTour />
       <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-6 pb-28 xl:pb-6">
-        <div className="xl:grid xl:grid-cols-[1fr_320px] 2xl:grid-cols-[1fr_360px] xl:gap-6">
-          <div className="space-y-6">
+        <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-5">
+          <div className="min-w-0 space-y-6">
             <HeroPromptCard
               prompt={prompt}
               onChange={setPrompt}
@@ -306,6 +306,8 @@ export default function DashboardClient() {
               historyLoading={dashboardLoading}
               exploreData={dashboardData?.explore}
               exploreLoading={dashboardLoading}
+              moodsData={dashboardData?.moods}
+              moodsLoading={dashboardLoading}
             />
 
             <ResultsSection
@@ -332,7 +334,7 @@ export default function DashboardClient() {
             />
           </div>
 
-          <aside className="hidden xl:flex xl:flex-col gap-6 sticky top-6 h-fit">
+          <aside className="hidden xl:flex xl:flex-col gap-4 sticky top-6 h-fit min-w-0">
             <ErrorBoundary compact label="Now playing">
               <NowPlayingPanel />
             </ErrorBoundary>
