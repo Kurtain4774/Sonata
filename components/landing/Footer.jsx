@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { FaTwitter, FaDiscord, FaGithub } from 'react-icons/fa'
+import SonataLogo from '@/components/SonataLogo'
 
 const navLinks = [
   { label: 'About', href: '#' },
@@ -22,14 +23,10 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-10">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1DB954] to-emerald-700 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="4" width="2.5" height="8" rx="1.25" fill="white" />
-                <rect x="6.5" y="2" width="2.5" height="12" rx="1.25" fill="white" />
-                <rect x="11" y="5" width="2.5" height="7" rx="1.25" fill="white" />
-              </svg>
-            </div>
-            <span className="font-bold text-white text-lg tracking-tight">Sonata</span>
+            <SonataLogo size={32} />
+            <span className="font-bold text-white text-lg tracking-tight">
+              Son<span className="text-spotify">ata</span>
+            </span>
           </div>
 
           {/* Nav links */}

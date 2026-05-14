@@ -14,13 +14,26 @@ export default function RecommendedRow() {
   const wb = useWebPlayback();
 
   useEffect(() => {
-    fetch("/api/history")
+    const controller = new AbortController();
+    let active = true;
+    fetch("/api/history", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : { prompts: [] }))
       .then((d) => {
+        if (!active) return;
         const saved = (d.prompts || []).filter((p) => p.savedAsPlaylist).slice(0, 10);
         setItems(saved.length ? saved : (d.prompts || []).slice(0, 10));
       })
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        if (active && err.name !== "AbortError") setItems([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   const scrollRight = () => {

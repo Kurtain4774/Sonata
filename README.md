@@ -28,6 +28,12 @@ Next.js 14 (App Router) · NextAuth (Spotify OAuth) · MongoDB / Mongoose · Goo
 | `/api/playlist` | `POST` — create playlist on Spotify and persist save state |
 | `/api/history`, `/api/history/[id]` | `GET` — user history |
 
+## Promo screenshots
+
+Run `npm run screenshots:sonata` to capture the six deterministic Sonata promo frames as PNGs in `screenshots/sonata-frames`.
+
+The workflow uses the screenshot-only fixture route at `/screenshots/sonata`, starts `next dev` on port 3000 if needed, and captures a 1440x900 desktop viewport with Playwright.
+
 ## Deploy to Vercel
 
 1. Push the repo to GitHub.

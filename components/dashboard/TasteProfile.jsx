@@ -16,17 +16,34 @@ const TAG_STYLES = {
 export default function TasteProfile() {
   const [tags, setTags] = useState([]);
   const [count, setCount] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/stats/summary")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (!d) return;
-        setTags(d.tasteTags || []);
-        setCount(d.savedPlaylists ?? null);
+        if (d) {
+          setTags(d.tasteTags || []);
+          setCount(d.savedPlaylists ?? null);
+        }
+        setLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => setLoaded(true));
   }, []);
+
+  if (!loaded) {
+    return (
+      <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 animate-pulse">
+        <div className="h-3.5 w-28 bg-neutral-800 rounded mb-2" />
+        <div className="h-2.5 w-44 bg-neutral-800 rounded mb-4" />
+        <div className="flex flex-wrap gap-2">
+          {[68, 84, 56, 72, 60].map((w, i) => (
+            <div key={i} className="h-6 bg-neutral-800 rounded-full" style={{ width: w }} />
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5">

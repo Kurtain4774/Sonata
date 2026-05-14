@@ -5,6 +5,7 @@ import { FaSpotify, FaPlay } from "react-icons/fa";
 import { FiLink } from "react-icons/fi";
 import ShareToggle from "./ShareToggle";
 import { useSettings } from "./SettingsContext";
+import { useToast } from "./ToastContext";
 
 export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, initialSaved, initialUrl, initialShared = false }) {
   const [status, setStatus] = useState(initialSaved ? "saved" : "idle");
@@ -15,10 +16,12 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
   const [shareStatus, setShareStatus] = useState("idle");
   const [autoSaveToast, setAutoSaveToast] = useState(false);
   const settings = useSettings();
+  const toast = useToast();
   const autoSaveFiredRef = useRef(false);
 
   const save = async () => {
-    setStatus("saving");
+    // Optimistic: flip to "saved" immediately, reconcile on failure.
+    setStatus("saved");
     setError(null);
     try {
       const res = await fetch("/api/playlist", {
@@ -29,10 +32,11 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
       setUrl(data.playlistUrl);
-      setStatus("saved");
     } catch (err) {
       setError(err.message);
       setStatus("idle");
+      setUrl(null);
+      toast({ type: "error", message: `Couldn't save: ${err.message}` });
     }
   };
 
@@ -110,23 +114,27 @@ export default function PlaylistSaveButton({ promptId, name, trackUris, tracks, 
           {queueStatus === "queuing" ? "Queuing…" : "Play Now"}
         </button>
 
-        {status === "saved" && url ? (
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-spotify hover:brightness-110 text-black font-semibold"
-          >
-            <FaSpotify /> Open in Spotify
-          </a>
+        {status === "saved" ? (
+          url ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-spotify hover:brightness-110 text-black font-semibold"
+            >
+              <FaSpotify /> Open in Spotify
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-spotify/70 text-black font-semibold cursor-default">
+              <FaSpotify /> Saved! Finishing up…
+            </span>
+          )
         ) : (
           <button
             onClick={save}
-            disabled={status === "saving"}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-spotify hover:brightness-110 text-black font-semibold disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-spotify hover:brightness-110 text-black font-semibold"
           >
-            <FaSpotify />
-            {status === "saving" ? "Saving…" : "Save to Spotify"}
+            <FaSpotify /> Save to Spotify
           </button>
         )}
 

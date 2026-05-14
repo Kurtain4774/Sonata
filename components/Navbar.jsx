@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ProfileMenu from "./ProfileMenu";
+import SonataLogo from "./SonataLogo";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
@@ -14,13 +15,10 @@ const NAV = [
 function Logo() {
   return (
     <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold">
-      <span className="inline-flex items-end gap-[2px] h-5">
-        <span className="w-[3px] h-2 bg-spotify rounded-sm" />
-        <span className="w-[3px] h-4 bg-spotify rounded-sm" />
-        <span className="w-[3px] h-3 bg-spotify rounded-sm" />
-        <span className="w-[3px] h-5 bg-spotify rounded-sm" />
+      <SonataLogo size={24} />
+      <span>
+        Son<span className="text-spotify">ata</span>
       </span>
-      <span>Sonata</span>
     </Link>
   );
 }

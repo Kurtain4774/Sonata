@@ -47,7 +47,7 @@ export default function SettingsModal({ user, onClose }) {
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-3xl h-[min(560px,calc(100vh-2rem))] rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl flex overflow-hidden">
+      <div className="relative w-full max-w-3xl h-[min(640px,calc(100vh-2rem))] rounded-2xl border border-neutral-800 bg-neutral-950 shadow-2xl flex flex-col sm:flex-row overflow-hidden">
         <button
           type="button"
           onClick={onClose}
@@ -57,7 +57,29 @@ export default function SettingsModal({ user, onClose }) {
           <FiX className="w-4 h-4" />
         </button>
 
-        <aside className="w-52 shrink-0 border-r border-neutral-800 bg-neutral-900/40 py-5 px-3">
+        {/* Mobile: horizontal scrollable tab strip */}
+        <nav className="sm:hidden flex gap-1 px-3 pt-3 pb-1 pr-12 border-b border-neutral-800 overflow-x-auto bg-neutral-900/40">
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`shrink-0 px-3 py-2 rounded-full text-sm transition-colors ${
+                  active
+                    ? "bg-spotify text-black font-medium"
+                    : "text-neutral-300 hover:text-white hover:bg-neutral-800/60"
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Desktop: vertical sidebar */}
+        <aside className="hidden sm:block w-52 shrink-0 border-r border-neutral-800 bg-neutral-900/40 py-5 px-3">
           <div className="px-3 mb-4 text-xs uppercase tracking-wider text-neutral-500">
             Settings
           </div>
@@ -82,7 +104,7 @@ export default function SettingsModal({ user, onClose }) {
           </nav>
         </aside>
 
-        <div className="flex-1 overflow-y-auto p-6 pt-12">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 sm:pt-12">
           {tab === "playback" && <PlaybackTab />}
           {tab === "personalization" && <PersonalizationTab />}
           {tab === "appearance" && <AppearanceTab />}

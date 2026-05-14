@@ -25,10 +25,24 @@ export default function RecentHistoryWidget() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/history")
+    const controller = new AbortController();
+    let active = true;
+    fetch("/api/history", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : { prompts: [] }))
-      .then((d) => setItems((d.prompts || []).slice(0, 4)))
-      .finally(() => setLoading(false));
+      .then((d) => {
+        if (active) setItems((d.prompts || []).slice(0, 4));
+      })
+      .catch((err) => {
+        if (active && err.name !== "AbortError") setItems([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   return (

@@ -2,6 +2,7 @@
 
 import { HiSparkles } from "react-icons/hi";
 import FineTuneControls from "../FineTuneControls";
+import { useSettings } from "../SettingsContext";
 
 const CHIPS = [
   { label: "Chill", dot: "bg-emerald-400", icon: "🌿" },
@@ -21,6 +22,8 @@ export default function HeroPromptCard({
   fineTune,
   onFineTuneChange,
 }) {
+  const settings = useSettings();
+  const personalized = settings?.aiTastePersonalization !== false;
   return (
     <section className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-gradient-to-br from-neutral-950 via-neutral-900 to-emerald-950/30 shadow-spotify-glow">
       <div className="pointer-events-none absolute -top-24 -left-16 w-64 h-64 rounded-full bg-spotify/20 blur-3xl" />
@@ -63,6 +66,14 @@ export default function HeroPromptCard({
               >
                 <HiSparkles /> {loading ? "Generating…" : "Generate"}
               </button>
+              {personalized && (
+                <span
+                  title="Sonata is using your top artists & recent listening to personalize results."
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-spotify/10 border border-spotify/30 text-[11px] font-medium text-spotify"
+                >
+                  <HiSparkles className="text-[10px]" /> Personalized for you
+                </span>
+              )}
               <div className="flex flex-wrap gap-2">
                 {CHIPS.map((c) => (
                   <button

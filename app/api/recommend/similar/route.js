@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getSimilarRecommendations, GeminiParseError } from "@/lib/gemini";
+import { getSimilarRecommendations, GeminiParseError, GeminiUnavailableError } from "@/lib/gemini";
 import { searchTracks, SpotifyAuthError } from "@/lib/spotify";
 import { getDeezerPreview } from "@/lib/deezer";
 import { connectDB } from "@/lib/mongodb";
@@ -62,6 +62,15 @@ export async function POST(req) {
     }
     if (err instanceof GeminiParseError) {
       return NextResponse.json({ error: "AI returned unreadable response" }, { status: 502 });
+    }
+    if (err instanceof GeminiUnavailableError) {
+      return NextResponse.json(
+        { error: "AI is busy right now. Please try again in a moment." },
+        {
+          status: 503,
+          headers: { "Retry-After": String(Math.ceil((err.retryAfterMs || 2000) / 1000)) },
+        }
+      );
     }
     console.error("/api/recommend/similar failed", err);
     return NextResponse.json({ error: "Similar fetch failed" }, { status: 500 });

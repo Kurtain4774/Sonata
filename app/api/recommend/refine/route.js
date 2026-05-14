@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getRefinedRecommendations, GeminiParseError } from "@/lib/gemini";
+import { getRefinedRecommendations, GeminiParseError, GeminiUnavailableError } from "@/lib/gemini";
 import { searchTracks, SpotifyAuthError } from "@/lib/spotify";
 import { getDeezerPreview } from "@/lib/deezer";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -18,9 +19,23 @@ export async function POST(req) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const rl = rateLimit(`refine:${session.spotifyId}`, { limit: 15, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `Slow down — try again in ${Math.ceil(rl.retryAfterMs / 1000)}s.` },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+    );
+  }
+
   const originalPrompt = (body?.originalPrompt || "").toString().trim();
   const followUp = (body?.followUp || "").toString().trim();
   const currentTracks = body?.currentTracks;
+  const excludedArtists = Array.isArray(body?.excludedArtists)
+    ? body.excludedArtists
+        .map((a) => (typeof a === "string" ? a.trim() : ""))
+        .filter(Boolean)
+        .slice(0, 50)
+    : [];
 
   if (!originalPrompt || !followUp) {
     return NextResponse.json(
@@ -42,8 +57,15 @@ export async function POST(req) {
   }
 
   try {
-    const items = await getRefinedRecommendations(originalPrompt, currentTracks, followUp);
-    const matched = await searchTracks(session.accessToken, items);
+    const items = await getRefinedRecommendations(originalPrompt, currentTracks, followUp, excludedArtists);
+    let matched = await searchTracks(session.accessToken, items);
+    if (excludedArtists.length > 0) {
+      const lowers = new Set(excludedArtists.map((a) => a.toLowerCase()));
+      matched = matched.filter((t) => {
+        const artists = (t.artist || "").split(",").map((s) => s.trim().toLowerCase());
+        return !artists.some((a) => lowers.has(a));
+      });
+    }
     const tracks = await Promise.all(
       matched.map(async (t) => ({
         ...t,
@@ -63,6 +85,15 @@ export async function POST(req) {
       return NextResponse.json(
         { error: "The AI returned an unreadable response. Try again." },
         { status: 502 }
+      );
+    }
+    if (err instanceof GeminiUnavailableError) {
+      return NextResponse.json(
+        { error: "AI is busy right now. Please try again in a moment." },
+        {
+          status: 503,
+          headers: { "Retry-After": String(Math.ceil((err.retryAfterMs || 2000) / 1000)) },
+        }
       );
     }
     console.error("/api/recommend/refine failed", err);

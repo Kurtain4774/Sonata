@@ -2,6 +2,7 @@
 
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
+import SonataLogo from "@/components/SonataLogo";
 
 export default function LandingHeader() {
   const { data: session } = useSession();
@@ -10,12 +11,12 @@ export default function LandingHeader() {
     <header className="absolute top-0 inset-x-0 z-30">
       <div className="w-[min(92vw,1120px)] xl:w-[min(94vw,1240px)] min-[1500px]:w-[min(94vw,1780px)] min-[1800px]:w-[min(94vw,1880px)] mx-auto flex items-center justify-between gap-4 py-5 sm:py-7">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-spotify to-emerald-700 shadow-lg shadow-spotify/20 group-hover:scale-105 transition">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 text-black" fill="currentColor">
-              <path d="M3 12h2v4H3zM7 8h2v12H7zM11 4h2v20h-2zM15 8h2v12h-2zM19 12h2v4h-2z" />
-            </svg>
+          <span className="inline-flex items-center justify-center w-9 h-9 group-hover:scale-105 transition">
+            <SonataLogo size={36} />
           </span>
-          <span className="text-xl sm:text-2xl font-bold tracking-tight">Sonata</span>
+          <span className="text-xl sm:text-2xl font-bold tracking-tight">
+            Son<span className="text-spotify">ata</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">

@@ -6,13 +6,43 @@ import { HiSparkles } from "react-icons/hi";
 
 export default function ListeningInsights() {
   const [data, setData] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/stats/summary")
       .then((r) => (r.ok ? r.json() : null))
-      .then(setData)
-      .catch(() => setData(null));
+      .then((d) => {
+        setData(d);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
   }, []);
+
+  if (!loaded) {
+    return (
+      <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 animate-pulse">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-3.5 w-36 bg-neutral-800 rounded" />
+          <div className="h-3 w-20 bg-neutral-800 rounded" />
+        </div>
+        <div className="h-2.5 w-16 bg-neutral-800 rounded mb-3" />
+        <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+          <ul className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <li key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="h-2.5 w-24 bg-neutral-800 rounded" />
+                  <div className="h-2.5 w-8 bg-neutral-800 rounded" />
+                </div>
+                <div className="h-1 bg-neutral-800 rounded" />
+              </li>
+            ))}
+          </ul>
+          <div className="w-[110px] h-[110px] rounded-full border-[10px] border-neutral-800" />
+        </div>
+      </section>
+    );
+  }
 
   const topGenres = data?.topGenres || [];
   const dominant = topGenres[0];

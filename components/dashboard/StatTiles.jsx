@@ -28,15 +28,42 @@ const Tile = ({ icon, iconBg, label, value, sub, subTone = "spotify" }) => (
   </div>
 );
 
+function TileSkeleton() {
+  return (
+    <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-900/60 border border-neutral-800 animate-pulse">
+      <div className="w-11 h-11 rounded-full bg-neutral-800" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-2.5 w-20 bg-neutral-800 rounded" />
+        <div className="h-3.5 w-14 bg-neutral-800 rounded" />
+        <div className="h-2.5 w-24 bg-neutral-800 rounded" />
+      </div>
+    </div>
+  );
+}
+
 export default function StatTiles() {
   const [data, setData] = useState(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/stats/summary")
       .then((r) => (r.ok ? r.json() : null))
-      .then(setData)
-      .catch(() => setData(null));
+      .then((d) => {
+        setData(d);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
   }, []);
+
+  if (!loaded) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <TileSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
 
   const d = data || {
     playlistsGenerated: 0,

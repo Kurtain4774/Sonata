@@ -10,10 +10,24 @@ export default function CommunityPicks() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/explore?page=1")
+    const controller = new AbortController();
+    let active = true;
+    fetch("/api/explore?page=1", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : { items: [] }))
-      .then((d) => setItems((d.items || []).slice(0, 3)))
-      .finally(() => setLoading(false));
+      .then((d) => {
+        if (active) setItems((d.items || []).slice(0, 3));
+      })
+      .catch((err) => {
+        if (active && err.name !== "AbortError") setItems([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   return (
