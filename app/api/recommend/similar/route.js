@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getSimilarRecommendations, GeminiParseError, GeminiUnavailableError } from "@/lib/gemini";
-import { searchTracks, SpotifyAuthError } from "@/lib/spotify";
+import { getSimilarRecommendations } from "@/lib/gemini";
+import { searchTracks } from "@/lib/spotify";
 import { getDeezerPreview } from "@/lib/deezer";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
+import { mapRecommendError } from "@/lib/recommendHelpers";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -57,21 +58,8 @@ export async function POST(req) {
 
     return NextResponse.json({ tracks: enriched });
   } catch (err) {
-    if (err instanceof SpotifyAuthError) {
-      return NextResponse.json({ error: "Spotify session expired" }, { status: 401 });
-    }
-    if (err instanceof GeminiParseError) {
-      return NextResponse.json({ error: "AI returned unreadable response" }, { status: 502 });
-    }
-    if (err instanceof GeminiUnavailableError) {
-      return NextResponse.json(
-        { error: "AI is busy right now. Please try again in a moment." },
-        {
-          status: 503,
-          headers: { "Retry-After": String(Math.ceil((err.retryAfterMs || 2000) / 1000)) },
-        }
-      );
-    }
+    const mapped = mapRecommendError(err);
+    if (mapped) return mapped;
     console.error("/api/recommend/similar failed", err);
     return NextResponse.json({ error: "Similar fetch failed" }, { status: 500 });
   }

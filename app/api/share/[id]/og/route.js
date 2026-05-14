@@ -64,11 +64,8 @@ export async function GET(req, { params }) {
       >
         {/* Logo */}
         <div style={{ display: "flex", marginBottom: "44px" }}>
-          <span style={{ color: "#ffffff", fontSize: "32px", fontWeight: 800 }}>
-            Sound
-          </span>
           <span style={{ color: "#1DB954", fontSize: "32px", fontWeight: 800 }}>
-            Sage
+            Sonata
           </span>
         </div>
 

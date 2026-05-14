@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getRefinedRecommendations, GeminiParseError, GeminiUnavailableError } from "@/lib/gemini";
-import { searchTracks, SpotifyAuthError } from "@/lib/spotify";
+import { getRefinedRecommendations } from "@/lib/gemini";
+import { searchTracks } from "@/lib/spotify";
 import { getDeezerPreview } from "@/lib/deezer";
 import { rateLimit } from "@/lib/rateLimit";
+import { parseExcludedArtists, isExcludedArtist, mapRecommendError } from "@/lib/recommendHelpers";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -30,12 +31,7 @@ export async function POST(req) {
   const originalPrompt = (body?.originalPrompt || "").toString().trim();
   const followUp = (body?.followUp || "").toString().trim();
   const currentTracks = body?.currentTracks;
-  const excludedArtists = Array.isArray(body?.excludedArtists)
-    ? body.excludedArtists
-        .map((a) => (typeof a === "string" ? a.trim() : ""))
-        .filter(Boolean)
-        .slice(0, 50)
-    : [];
+  const excludedArtists = parseExcludedArtists(body);
 
   if (!originalPrompt || !followUp) {
     return NextResponse.json(
@@ -61,10 +57,7 @@ export async function POST(req) {
     let matched = await searchTracks(session.accessToken, items);
     if (excludedArtists.length > 0) {
       const lowers = new Set(excludedArtists.map((a) => a.toLowerCase()));
-      matched = matched.filter((t) => {
-        const artists = (t.artist || "").split(",").map((s) => s.trim().toLowerCase());
-        return !artists.some((a) => lowers.has(a));
-      });
+      matched = matched.filter((t) => !isExcludedArtist(t, lowers));
     }
     const tracks = await Promise.all(
       matched.map(async (t) => ({
@@ -75,27 +68,8 @@ export async function POST(req) {
 
     return NextResponse.json({ tracks });
   } catch (err) {
-    if (err instanceof SpotifyAuthError) {
-      return NextResponse.json(
-        { error: "Spotify session expired — please log in again." },
-        { status: 401 }
-      );
-    }
-    if (err instanceof GeminiParseError) {
-      return NextResponse.json(
-        { error: "The AI returned an unreadable response. Try again." },
-        { status: 502 }
-      );
-    }
-    if (err instanceof GeminiUnavailableError) {
-      return NextResponse.json(
-        { error: "AI is busy right now. Please try again in a moment." },
-        {
-          status: 503,
-          headers: { "Retry-After": String(Math.ceil((err.retryAfterMs || 2000) / 1000)) },
-        }
-      );
-    }
+    const mapped = mapRecommendError(err);
+    if (mapped) return mapped;
     console.error("/api/recommend/refine failed", err);
     return NextResponse.json({ error: "Refinement failed" }, { status: 500 });
   }

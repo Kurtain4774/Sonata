@@ -11,6 +11,7 @@ import User from "@/models/User";
 import Prompt from "@/models/Prompt";
 import Settings from "@/models/Settings";
 import { mergeWithDefaults } from "@/lib/settings";
+import { parseExcludedArtists, isExcludedArtist } from "@/lib/recommendHelpers";
 
 function titleCasePlaylistName(prompt) {
   const trimmed = prompt.trim().slice(0, 60);
@@ -54,12 +55,7 @@ export async function POST(req) {
     );
   }
 
-  const excludedArtists = Array.isArray(body?.excludedArtists)
-    ? body.excludedArtists
-        .map((a) => (typeof a === "string" ? a.trim() : ""))
-        .filter(Boolean)
-        .slice(0, 50)
-    : [];
+  const excludedArtists = parseExcludedArtists(body);
 
   // Use a mutable wrapper so withSpotifyRetry can update the access token
   // mid-stream after a 401-driven rotation, and subsequent searches see it.
@@ -159,11 +155,6 @@ export async function POST(req) {
         send({ type: "meta", playlistName, prompt, total: items.length });
 
         const excludedArtistLowers = new Set(excludedArtists.map((a) => a.toLowerCase()));
-        const isExcludedArtist = (track) => {
-          if (excludedArtistLowers.size === 0) return false;
-          const artists = (track.artist || "").split(",").map((s) => s.trim().toLowerCase());
-          return artists.some((a) => excludedArtistLowers.has(a));
-        };
 
         const fetchPreview = async (t) => {
           if (!settings.enableDeezerPreviews) return null;
@@ -184,7 +175,7 @@ export async function POST(req) {
             );
             if (!track) return;
             if (!settings.allowExplicit && track.explicit) return;
-            if (isExcludedArtist(track)) return;
+            if (isExcludedArtist(track, excludedArtistLowers)) return;
             if (track.uri && seenUris.has(track.uri)) return;
             if (track.uri) seenUris.add(track.uri);
             const previewUrl = await fetchPreview(track);

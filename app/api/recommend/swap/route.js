@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getSwapRecommendation, GeminiParseError, GeminiUnavailableError } from "@/lib/gemini";
-import { searchTrack, SpotifyAuthError } from "@/lib/spotify";
+import { getSwapRecommendation } from "@/lib/gemini";
+import { searchTrack } from "@/lib/spotify";
 import { getDeezerPreview } from "@/lib/deezer";
 import { rateLimit } from "@/lib/rateLimit";
+import { parseExcludedArtists, mapRecommendError } from "@/lib/recommendHelpers";
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -30,12 +31,7 @@ export async function POST(req) {
   const originalPrompt = (body?.originalPrompt || "").toString().trim();
   const currentTracks = body?.currentTracks;
   const trackToReplace = body?.trackToReplace;
-  const excludedArtists = Array.isArray(body?.excludedArtists)
-    ? body.excludedArtists
-        .map((a) => (typeof a === "string" ? a.trim() : ""))
-        .filter(Boolean)
-        .slice(0, 50)
-    : [];
+  const excludedArtists = parseExcludedArtists(body);
 
   if (!originalPrompt) {
     return NextResponse.json({ error: "originalPrompt is required" }, { status: 400 });
@@ -90,21 +86,8 @@ export async function POST(req) {
 
     return NextResponse.json({ track: { ...matched, previewUrl } });
   } catch (err) {
-    if (err instanceof SpotifyAuthError) {
-      return NextResponse.json({ error: "Spotify session expired" }, { status: 401 });
-    }
-    if (err instanceof GeminiParseError) {
-      return NextResponse.json({ error: "AI returned unreadable response" }, { status: 502 });
-    }
-    if (err instanceof GeminiUnavailableError) {
-      return NextResponse.json(
-        { error: "AI is busy right now. Please try again in a moment." },
-        {
-          status: 503,
-          headers: { "Retry-After": String(Math.ceil((err.retryAfterMs || 2000) / 1000)) },
-        }
-      );
-    }
+    const mapped = mapRecommendError(err);
+    if (mapped) return mapped;
     console.error("/api/recommend/swap failed", err);
     return NextResponse.json({ error: "Swap failed" }, { status: 500 });
   }

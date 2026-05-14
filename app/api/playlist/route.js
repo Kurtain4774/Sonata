@@ -76,12 +76,7 @@ export async function POST(req) {
     }
 
     const playlist = await withSpotifyRetry(session, (accessToken) =>
-      createPlaylist(
-        accessToken,
-        session.spotifyId,
-        finalName,
-        description
-      )
+      createPlaylist(accessToken, finalName, description)
     );
     if (!playlist?.id) {
       throw new Error(`Playlist created but missing id - full response: ${JSON.stringify(playlist)}`);
