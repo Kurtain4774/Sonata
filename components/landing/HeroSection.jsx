@@ -104,28 +104,6 @@ export default function HeroSection() {
               </button>
             </div>
 
-            <div className="mt-10 flex items-center gap-3.5">
-              <div className="flex -space-x-2.5">
-                {[
-                  "from-pink-400 to-orange-400",
-                  "from-blue-400 to-cyan-400",
-                  "from-purple-400 to-pink-400",
-                  "from-emerald-400 to-teal-400",
-                ].map((g, i) => (
-                  <div
-                    key={i}
-                    className={`w-9 h-9 rounded-full bg-gradient-to-br ${g} ring-2 ring-black`}
-                  />
-                ))}
-              </div>
-              <div className="text-sm">
-                <div className="font-medium text-neutral-100">Loved by music explorers</div>
-                <div className="text-neutral-400 text-xs">
-                  Join 24,892+ discovering with Sonata
-                </div>
-              </div>
-            </div>
-
             <div className="mt-12">
               <FeatureCards />
             </div>

@@ -123,7 +123,6 @@ export default function DashboardPreview({ selectedTrackId, onSelectTrack, track
             </div>
             <div className="text-xs">
               <div className="font-medium">Aria</div>
-              <div className="text-neutral-500 text-[10px]">Free Plan</div>
             </div>
           </div>
         </aside>

@@ -8,7 +8,6 @@ import {
   FiMusic,
   FiPlay,
   FiEdit2,
-  FiMoreHorizontal,
   FiSearch,
   FiFilter,
   FiSliders,
@@ -517,9 +516,6 @@ export default function PlaylistDetailClient({ playlist }) {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-700 text-neutral-100 text-sm hover:bg-neutral-800 transition"
                 >
                   <FiEdit2 className="w-4 h-4" /> Edit Playlist
-                </button>
-                <button className="px-3 py-2 rounded-lg border border-neutral-700 text-neutral-300 hover:bg-neutral-800 transition">
-                  <FiMoreHorizontal className="w-4 h-4" />
                 </button>
               </div>
             </div>

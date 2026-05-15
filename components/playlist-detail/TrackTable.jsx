@@ -17,8 +17,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   FiTrash2,
-  FiThumbsDown,
-  FiMoreVertical,
   FiPlus,
   FiMenu,
 } from "react-icons/fi";
@@ -38,7 +36,6 @@ function TrackRow({
   selected,
   onToggleSelection,
   onRemoveOne,
-  onDislikeOne,
   onAddOne,
   draggable,
 }) {
@@ -133,19 +130,6 @@ function TrackRow({
               >
                 <FiTrash2 className="w-4 h-4" />
               </button>
-              <button
-                onClick={() => onDislikeOne?.(t.uri)}
-                className="p-1.5 rounded hover:bg-neutral-800 hover:text-amber-400"
-                title="Dislike"
-              >
-                <FiThumbsDown className="w-4 h-4" />
-              </button>
-              <button
-                className="p-1.5 rounded hover:bg-neutral-800"
-                title="More"
-              >
-                <FiMoreVertical className="w-4 h-4" />
-              </button>
             </>
           )}
         </div>
@@ -161,7 +145,6 @@ export default function TrackTable({
   onToggleAll,
   readOnly = false,
   onRemoveOne,
-  onDislikeOne,
   onAddOne,
   onReorder,
   rowsPerPage = 10,
@@ -207,7 +190,6 @@ export default function TrackTable({
             selected={selected}
             onToggleSelection={onToggleSelection}
             onRemoveOne={onRemoveOne}
-            onDislikeOne={onDislikeOne}
             onAddOne={onAddOne}
             draggable={draggable}
           />
