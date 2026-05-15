@@ -4,6 +4,7 @@ import { memo } from "react";
 import Link from "next/link";
 import { HiSparkles } from "react-icons/hi";
 import { FiClock } from "react-icons/fi";
+import LoadingSpinner from "./LoadingSpinner";
 
 function relativeTime(dateStr) {
   if (!dateStr) return "";
@@ -35,13 +36,7 @@ function RecentHistoryWidget({ data, loading }) {
         </Link>
       </div>
 
-      {isLoading && (
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-12 rounded-lg bg-neutral-900 animate-pulse" />
-          ))}
-        </div>
-      )}
+      {isLoading && <LoadingSpinner label="Loading history…" />}
       {!isLoading && !items.length && (
         <p className="text-sm text-neutral-500">No history yet — generate a playlist to begin.</p>
       )}

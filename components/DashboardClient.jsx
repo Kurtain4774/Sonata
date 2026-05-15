@@ -39,16 +39,29 @@ export default function DashboardClient() {
   const [swappingKey, setSwappingKey] = useState(null);
   const seedAutoFiredRef = useRef(false);
 
-  // ── Batched dashboard data ─────────────────────────────────────────────────
-  const [dashboardData, setDashboardData] = useState(null);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
+  // ── Per-section dashboard data (loaded independently) ──────────────────────
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [history, setHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [moods, setMoods] = useState(null);
+  const [moodsLoading, setMoodsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetch("/api/dashboard")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (active) { setDashboardData(d); setDashboardLoading(false); } })
-      .catch(() => { if (active) setDashboardLoading(false); });
+    const load = (url, setData, setLoading) => {
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!active) return;
+          setData(d?.data ?? null);
+          setLoading(false);
+        })
+        .catch(() => { if (active) setLoading(false); });
+    };
+    load("/api/dashboard/stats", setStats, setStatsLoading);
+    load("/api/dashboard/history", setHistory, setHistoryLoading);
+    load("/api/dashboard/moods", setMoods, setMoodsLoading);
     return () => { active = false; };
   }, []);
 
@@ -292,15 +305,15 @@ export default function DashboardClient() {
             />
 
             <ErrorBoundary compact label="Stats">
-              <StatTiles data={dashboardData?.stats} loading={dashboardLoading} />
+              <StatTiles data={stats} loading={statsLoading} />
             </ErrorBoundary>
 
             <WidgetGroup
               onPickMood={handlePickMood}
-              historyData={dashboardData?.history}
-              historyLoading={dashboardLoading}
-              moodsData={dashboardData?.moods}
-              moodsLoading={dashboardLoading}
+              historyData={history}
+              historyLoading={historyLoading}
+              moodsData={moods}
+              moodsLoading={moodsLoading}
             />
 
             <ResultsSection
@@ -332,10 +345,10 @@ export default function DashboardClient() {
               <NowPlayingPanel />
             </ErrorBoundary>
             <ErrorBoundary compact label="Listening insights">
-              <ListeningInsights data={dashboardData?.stats} loading={dashboardLoading} />
+              <ListeningInsights data={stats} loading={statsLoading} />
             </ErrorBoundary>
             <ErrorBoundary compact label="Taste profile">
-              <TasteProfile data={dashboardData?.stats} loading={dashboardLoading} />
+              <TasteProfile data={stats} loading={statsLoading} />
             </ErrorBoundary>
           </aside>
         </div>

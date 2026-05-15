@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { FaMusic, FaHeart, FaFire, FaWaveSquare } from "react-icons/fa";
 import { FiClock } from "react-icons/fi";
+import LoadingSpinner from "./LoadingSpinner";
 
 function formatHours(ms) {
   if (!ms) return "0h";
@@ -28,26 +29,11 @@ const Tile = ({ icon, iconBg, label, value, sub, subTone = "spotify" }) => (
   </div>
 );
 
-function TileSkeleton() {
-  return (
-    <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-900/60 border border-neutral-800 animate-pulse">
-      <div className="w-11 h-11 rounded-full bg-neutral-800" />
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="h-2.5 w-20 bg-neutral-800 rounded" />
-        <div className="h-3.5 w-14 bg-neutral-800 rounded" />
-        <div className="h-2.5 w-24 bg-neutral-800 rounded" />
-      </div>
-    </div>
-  );
-}
-
 function StatTiles({ data, loading }) {
   if (loading && !data) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-5 gap-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <TileSkeleton key={i} />
-        ))}
+      <div className="rounded-xl bg-neutral-900/60 border border-neutral-800">
+        <LoadingSpinner label="Loading stats…" />
       </div>
     );
   }

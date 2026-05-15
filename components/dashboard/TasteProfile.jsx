@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import LoadingSpinner from "./LoadingSpinner";
 
 const TAG_STYLES = {
   Melodic: "bg-pink-500/15 text-pink-300 border-pink-500/30",
@@ -16,14 +17,9 @@ const TAG_STYLES = {
 function TasteProfile({ data, loading }) {
   if (loading && !data) {
     return (
-      <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 animate-pulse">
-        <div className="h-3.5 w-28 bg-neutral-800 rounded mb-2" />
-        <div className="h-2.5 w-44 bg-neutral-800 rounded mb-4" />
-        <div className="flex flex-wrap gap-2">
-          {[68, 84, 56, 72, 60].map((w, i) => (
-            <div key={i} className="h-6 bg-neutral-800 rounded-full" style={{ width: w }} />
-          ))}
-        </div>
+      <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5">
+        <h3 className="text-sm font-semibold mb-1">Taste Profile</h3>
+        <LoadingSpinner label="Loading taste profile…" />
       </section>
     );
   }

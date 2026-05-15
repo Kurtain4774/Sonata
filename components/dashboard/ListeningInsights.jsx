@@ -3,30 +3,17 @@
 import { memo } from "react";
 import Link from "next/link";
 import { HiSparkles } from "react-icons/hi";
+import LoadingSpinner from "./LoadingSpinner";
 
 function ListeningInsights({ data, loading }) {
   if (loading && !data) {
     return (
-      <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5 animate-pulse">
-        <div className="flex items-center justify-between mb-4">
-          <div className="h-3.5 w-36 bg-neutral-800 rounded" />
-          <div className="h-3 w-20 bg-neutral-800 rounded" />
+      <section className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <HiSparkles className="text-spotify" />
+          <h3 className="text-sm font-semibold">Your Listening Insights</h3>
         </div>
-        <div className="h-2.5 w-16 bg-neutral-800 rounded mb-3" />
-        <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
-          <ul className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <li key={i}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="h-2.5 w-24 bg-neutral-800 rounded" />
-                  <div className="h-2.5 w-8 bg-neutral-800 rounded" />
-                </div>
-                <div className="h-1 bg-neutral-800 rounded" />
-              </li>
-            ))}
-          </ul>
-          <div className="w-[110px] h-[110px] rounded-full border-[10px] border-neutral-800" />
-        </div>
+        <LoadingSpinner label="Analyzing your top genres…" />
       </section>
     );
   }

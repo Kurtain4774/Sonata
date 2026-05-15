@@ -2,6 +2,7 @@
 
 import { HiSparkles } from "react-icons/hi";
 import { FiChevronRight, FiExternalLink } from "react-icons/fi";
+import LoadingSpinner from "./LoadingSpinner";
 
 const FALLBACK_MOODS = [
   {
@@ -30,18 +31,6 @@ const FALLBACK_MOODS = [
   },
 ];
 
-function SkeletonRow() {
-  return (
-    <li className="flex items-center gap-3 p-2">
-      <div className="w-12 h-9 rounded-md bg-neutral-800 animate-pulse flex-shrink-0" />
-      <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-28 rounded bg-neutral-800 animate-pulse" />
-        <div className="h-2.5 w-16 rounded bg-neutral-800 animate-pulse" />
-      </div>
-    </li>
-  );
-}
-
 export default function TrendingMoods({ onPickMood, data, loading }) {
   const realPlaylists = data?.playlists?.length ? data.playlists : null;
   const moods = realPlaylists || FALLBACK_MOODS;
@@ -62,10 +51,11 @@ export default function TrendingMoods({ onPickMood, data, loading }) {
           </span>
         )}
       </div>
+      {loading && !data ? (
+        <LoadingSpinner label="Loading trending moods…" />
+      ) : (
       <ul className="space-y-2">
-        {loading
-          ? Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)
-          : moods.slice(0, 6).map((m) => (
+        {moods.slice(0, 6).map((m) => (
               <li key={m.name}>
                 <button
                   type="button"
@@ -100,6 +90,7 @@ export default function TrendingMoods({ onPickMood, data, loading }) {
               </li>
             ))}
       </ul>
+      )}
     </section>
   );
 }
