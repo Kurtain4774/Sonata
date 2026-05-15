@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaRandom, FaRedo, FaVolumeUp } from "react-icons/fa";
+import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp } from "react-icons/fa";
 import { HiOutlineMusicNote } from "react-icons/hi";
 
 const POLL_MS = 5000;
@@ -215,10 +215,7 @@ export default function NowPlayingPanel() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-3 px-2">
-        <button className="text-neutral-400 hover:text-white" aria-label="Shuffle">
-          <FaRandom />
-        </button>
+      <div className="flex items-center justify-center gap-4 mt-3">
         <button onClick={handlePrev} disabled={!track} className="text-neutral-300 hover:text-white disabled:opacity-40" aria-label="Previous">
           <FaStepBackward />
         </button>
@@ -232,9 +229,6 @@ export default function NowPlayingPanel() {
         </button>
         <button onClick={handleNext} disabled={!track} className="text-neutral-300 hover:text-white disabled:opacity-40" aria-label="Next">
           <FaStepForward />
-        </button>
-        <button className="text-neutral-400 hover:text-white" aria-label="Repeat">
-          <FaRedo />
         </button>
       </div>
 

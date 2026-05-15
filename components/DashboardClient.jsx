@@ -299,8 +299,6 @@ export default function DashboardClient() {
               onPickMood={handlePickMood}
               historyData={dashboardData?.history}
               historyLoading={dashboardLoading}
-              exploreData={dashboardData?.explore}
-              exploreLoading={dashboardLoading}
               moodsData={dashboardData?.moods}
               moodsLoading={dashboardLoading}
             />

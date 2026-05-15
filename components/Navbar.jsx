@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiBarChart2, FiCompass, FiDisc, FiHome } from "react-icons/fi";
+import { FiBarChart2, FiDisc, FiHome } from "react-icons/fi";
 import ProfileMenu from "./ProfileMenu";
 import SonataLogo from "./SonataLogo";
 
@@ -10,7 +10,6 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", short: "Home", icon: FiHome },
   { href: "/your-music", label: "Your Music", short: "Library", icon: FiDisc },
   { href: "/stats", label: "Stats", short: "Stats", icon: FiBarChart2 },
-  { href: "/explore", label: "Explore", short: "Explore", icon: FiCompass },
 ];
 
 function Logo() {
@@ -60,7 +59,7 @@ export default function Navbar({ session }) {
       </header>
 
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800 bg-neutral-950/95 backdrop-blur-xl px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-3 gap-1">
           {NAV.map((n) => {
             const active = pathname === n.href || pathname.startsWith(n.href + "/");
             const Icon = n.icon;
