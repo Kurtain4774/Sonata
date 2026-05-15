@@ -138,6 +138,93 @@ function TrackRow({
   );
 }
 
+function MobileTrackCard({
+  t,
+  readOnly,
+  selected,
+  onToggleSelection,
+  onRemoveOne,
+  onDislikeOne,
+  onAddOne,
+}) {
+  return (
+    <div
+      className={`rounded-xl border p-3 ${
+        selected
+          ? "border-spotify/40 bg-spotify/[0.06]"
+          : "border-neutral-800 bg-neutral-900/70"
+      }`}
+    >
+      <div className="flex gap-3">
+        {!readOnly && (
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={() => onToggleSelection?.(t.uri)}
+            className="mt-4 h-4 w-4 shrink-0 cursor-pointer accent-spotify"
+            aria-label={`Select ${t.title}`}
+          />
+        )}
+        {t.albumArt ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={t.albumArt}
+            alt=""
+            className="h-14 w-14 shrink-0 rounded object-cover"
+          />
+        ) : (
+          <div className="h-14 w-14 shrink-0 rounded bg-neutral-800" />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-medium text-neutral-100">{t.title}</div>
+          <div className="truncate text-sm text-neutral-400">{t.artist}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
+            <span>{formatDuration(t.durationMs)}</span>
+            {t.matchScore != null && (
+              <span className="text-spotify">{t.matchScore}% match</span>
+            )}
+            {t.moodFit && <MoodFitPill label={t.moodFit} />}
+          </div>
+        </div>
+      </div>
+      {(readOnly || onDislikeOne || onRemoveOne) && (
+        <div className="mt-3 flex items-center justify-end gap-2 border-t border-neutral-800 pt-2 text-sm">
+          {readOnly ? (
+            <button
+              type="button"
+              onClick={() => onAddOne?.(t)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3 py-1.5 text-neutral-200 hover:border-spotify/50 hover:text-spotify"
+            >
+              <FiPlus className="h-4 w-4" /> Add
+            </button>
+          ) : (
+            <>
+              {onDislikeOne && (
+                <button
+                  type="button"
+                  onClick={() => onDislikeOne(t.uri)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3 py-1.5 text-neutral-300 hover:border-amber-400/40 hover:text-amber-400"
+                >
+                  <FiThumbsDown className="h-4 w-4" /> Dislike
+                </button>
+              )}
+              {onRemoveOne && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveOne(t.uri)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 px-3 py-1.5 text-neutral-300 hover:border-rose-400/40 hover:text-rose-400"
+                >
+                  <FiTrash2 className="h-4 w-4" /> Remove
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TrackTable({
   tracks,
   selection,
@@ -145,6 +232,7 @@ export default function TrackTable({
   onToggleAll,
   readOnly = false,
   onRemoveOne,
+  onDislikeOne,
   onAddOne,
   onReorder,
   rowsPerPage = 10,
@@ -238,7 +326,27 @@ export default function TrackTable({
 
   return (
     <div className="w-full">
-      <div className="overflow-x-auto">
+      <div className="grid gap-3 md:hidden">
+        {visible.map((t) => (
+          <MobileTrackCard
+            key={t.uri || t.spotifyTrackId}
+            t={t}
+            readOnly={readOnly}
+            selected={!readOnly && selection?.has(t.uri)}
+            onToggleSelection={onToggleSelection}
+            onRemoveOne={onRemoveOne}
+            onDislikeOne={onDislikeOne}
+            onAddOne={onAddOne}
+          />
+        ))}
+        {visible.length === 0 && (
+          <div className="rounded-xl border border-neutral-800 bg-neutral-900/70 py-10 text-center text-sm text-neutral-500">
+            No tracks to show.
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         {draggable ? (
           <DndContext
             sensors={sensors}
@@ -254,9 +362,9 @@ export default function TrackTable({
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-3 px-1 text-xs text-neutral-400">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-3 px-1 text-xs text-neutral-400">
         <div>{total} tracks</div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           <button
             disabled={safePage <= 1}
             onClick={() => onPageChange?.(safePage - 1)}
@@ -285,7 +393,7 @@ export default function TrackTable({
             ›
           </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 sm:justify-start">
           <span>Rows per page:</span>
           <select
             value={rowsPerPage}

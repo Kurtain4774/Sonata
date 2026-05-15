@@ -14,7 +14,7 @@ export default async function ExplorePage() {
   return (
     <main className="min-h-screen">
       <Navbar session={session} />
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-6 py-10 pb-28 md:pb-10">
         <div className="mb-8">
           <h1 className="text-3xl font-semibold">Explore</h1>
           <p className="text-neutral-400 mt-1">

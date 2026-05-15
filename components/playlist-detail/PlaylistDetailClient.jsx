@@ -383,7 +383,7 @@ export default function PlaylistDetailClient({ playlist }) {
   while (collageArts.length < 4) collageArts.push(null);
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 lg:px-8 py-6">
+    <div className="max-w-[1440px] mx-auto px-4 lg:px-8 py-6 pb-28 md:pb-6">
       <div className="mb-4">
         <Link
           href="/your-music"

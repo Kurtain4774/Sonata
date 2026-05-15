@@ -30,7 +30,7 @@ export default async function YourMusicPage() {
   return (
     <main className="min-h-screen">
       <Navbar session={session} />
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-3xl mx-auto px-6 py-10 pb-28 md:pb-10">
         <YourMusicClient generated={items} />
       </div>
     </main>

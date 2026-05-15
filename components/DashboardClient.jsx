@@ -9,7 +9,6 @@ import ErrorBoundary from "./ErrorBoundary";
 import OnboardingTour from "./OnboardingTour";
 import HeroPromptCard from "./dashboard/HeroPromptCard";
 import StatTiles from "./dashboard/StatTiles";
-import RecommendedRow from "./dashboard/RecommendedRow";
 import WidgetGroup from "./dashboard/WidgetGroup";
 import NowPlayingPanel from "./dashboard/NowPlayingPanel";
 import ListeningInsights from "./dashboard/ListeningInsights";
@@ -294,10 +293,6 @@ export default function DashboardClient() {
 
             <ErrorBoundary compact label="Stats">
               <StatTiles data={dashboardData?.stats} loading={dashboardLoading} />
-            </ErrorBoundary>
-
-            <ErrorBoundary compact label="Recommended">
-              <RecommendedRow data={dashboardData?.history} loading={dashboardLoading} />
             </ErrorBoundary>
 
             <WidgetGroup

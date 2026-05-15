@@ -427,7 +427,7 @@ export default function StatsClient() {
   const [tab, setTab] = useState("artists");
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
+    <div className="max-w-3xl mx-auto px-6 py-10 pb-28 md:pb-10">
       <h1 className="text-3xl font-semibold mb-6">Your Listening Stats</h1>
 
       <div className="flex gap-2 mb-6 border-b border-neutral-800">

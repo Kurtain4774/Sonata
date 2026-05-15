@@ -168,7 +168,7 @@ export default function GlobalMiniPlayer() {
   if (dismissedId && track.id === dismissedId) return null;
 
   const displayPosition = seekDraft !== null ? seekDraft : position;
-  const containerCls = `fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[min(95vw,640px)] ${
+  const containerCls = `fixed bottom-24 md:bottom-4 left-1/2 -translate-x-1/2 z-50 w-[min(95vw,640px)] ${
     isDashboard ? "lg:hidden" : ""
   }`;
 

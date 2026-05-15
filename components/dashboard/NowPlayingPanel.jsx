@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaRandom, FaRedo, FaVolumeUp } from "react-icons/fa";
 import { HiOutlineMusicNote } from "react-icons/hi";
-import { useWebPlayback } from "../WebPlaybackProvider";
 
 const POLL_MS = 5000;
 const TICK_MS = 500;
@@ -16,13 +15,12 @@ function formatMs(ms) {
 }
 
 export default function NowPlayingPanel() {
-  const wb = useWebPlayback();
-  const { pausePlayback, resumePlayback, seekTo, changeVolume } = wb ?? {};
-
   const [playback, setPlayback] = useState(null);
   const [position, setPosition] = useState(0);
+  const [seekDraft, setSeekDraft] = useState(null);
   const [volume, setVolume] = useState(0.7);
   const [volumeBlocked, setVolumeBlocked] = useState(false);
+  const [controlError, setControlError] = useState(null);
   const lastSyncRef = useRef(0);
   const volumeTimerRef = useRef(null);
 
@@ -66,27 +64,80 @@ export default function NowPlayingPanel() {
   useEffect(() => {
     if (!playback?.isPlaying || !playback?.durationMs) return;
     const id = setInterval(() => {
+      if (seekDraft !== null) return;
       const elapsed = Date.now() - lastSyncRef.current;
       const next = Math.min((playback.progressMs || 0) + elapsed, playback.durationMs);
       setPosition(next);
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [playback?.isPlaying, playback?.progressMs, playback?.durationMs]);
+  }, [playback?.isPlaying, playback?.progressMs, playback?.durationMs, seekDraft]);
 
   const track = playback?.track || null;
   const duration = playback?.durationMs || 0;
   const isPlaying = !!playback?.isPlaying;
   const device = playback?.device || null;
 
+  const callControl = useCallback(async (path, init) => {
+    setControlError(null);
+    try {
+      const res = await fetch(path, {
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        ...init,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409) {
+          setControlError(
+            data?.error === "PREMIUM_REQUIRED"
+              ? "Spotify Premium required."
+              : data?.error === "NO_ACTIVE_DEVICE"
+              ? "No active Spotify device."
+              : "Playback unavailable."
+          );
+        }
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const handlePlayPause = async () => {
-    if (isPlaying) await pausePlayback?.();
-    else await resumePlayback?.();
-    setTimeout(() => fetchPlayback(), 400);
+    const target = !isPlaying;
+    setPlayback((p) => (p ? { ...p, isPlaying: target } : p));
+    const ok = await callControl("/api/playback/play", {
+      method: "PUT",
+      body: JSON.stringify({ play: target, deviceId: playback?.device?.id }),
+    });
+    if (!ok) setPlayback((p) => (p ? { ...p, isPlaying: !target } : p));
+    setTimeout(() => fetchPlayback(), 600);
+  };
+
+  const handleNext = async () => {
+    const ok = await callControl("/api/playback/next", { method: "POST" });
+    if (ok) setTimeout(() => fetchPlayback(), 400);
+  };
+
+  const handlePrev = async () => {
+    const ok = await callControl("/api/playback/previous", { method: "POST" });
+    if (ok) setTimeout(() => fetchPlayback(), 400);
+  };
+
+  const commitSeek = async (ms) => {
+    setSeekDraft(null);
+    setPosition(ms);
+    lastSyncRef.current = Date.now();
+    setPlayback((p) => (p ? { ...p, progressMs: ms } : p));
+    await callControl("/api/playback/seek", {
+      method: "PUT",
+      body: JSON.stringify({ positionMs: ms }),
+    });
   };
 
   const handleVolume = (vol) => {
     setVolume(vol);
-    changeVolume?.(vol);
     if (volumeTimerRef.current) clearTimeout(volumeTimerRef.current);
     volumeTimerRef.current = setTimeout(async () => {
       try {
@@ -105,12 +156,6 @@ export default function NowPlayingPanel() {
         volumeTimerRef.current = null;
       }
     }, 250);
-  };
-
-  const handleSeek = async (ms) => {
-    setPosition(ms);
-    await seekTo?.(ms);
-    setTimeout(() => fetchPlayback(), 400);
   };
 
   return (
@@ -152,13 +197,20 @@ export default function NowPlayingPanel() {
           type="range"
           min={0}
           max={duration || 1}
-          value={position}
+          value={Math.min(seekDraft !== null ? seekDraft : position, duration || 1)}
           disabled={!track}
-          onChange={(e) => handleSeek(Number(e.target.value))}
+          onChange={(e) => setSeekDraft(Number(e.target.value))}
+          onMouseUp={(e) => commitSeek(Number(e.currentTarget.value))}
+          onTouchEnd={(e) => commitSeek(Number(e.currentTarget.value))}
+          onKeyUp={(e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+              commitSeek(Number(e.currentTarget.value));
+            }
+          }}
           className="w-full h-1 accent-green-400 cursor-pointer disabled:opacity-40"
         />
         <div className="flex justify-between text-[10px] text-neutral-500 tabular-nums mt-1">
-          <span>{formatMs(position)}</span>
+          <span>{formatMs(seekDraft !== null ? seekDraft : position)}</span>
           <span>{formatMs(duration)}</span>
         </div>
       </div>
@@ -167,7 +219,7 @@ export default function NowPlayingPanel() {
         <button className="text-neutral-400 hover:text-white" aria-label="Shuffle">
           <FaRandom />
         </button>
-        <button className="text-neutral-300 hover:text-white" aria-label="Previous">
+        <button onClick={handlePrev} disabled={!track} className="text-neutral-300 hover:text-white disabled:opacity-40" aria-label="Previous">
           <FaStepBackward />
         </button>
         <button
@@ -178,13 +230,17 @@ export default function NowPlayingPanel() {
         >
           {isPlaying ? <FaPause /> : <FaPlay className="ml-0.5" />}
         </button>
-        <button className="text-neutral-300 hover:text-white" aria-label="Next">
+        <button onClick={handleNext} disabled={!track} className="text-neutral-300 hover:text-white disabled:opacity-40" aria-label="Next">
           <FaStepForward />
         </button>
         <button className="text-neutral-400 hover:text-white" aria-label="Repeat">
           <FaRedo />
         </button>
       </div>
+
+      {controlError && (
+        <div className="mt-2 text-[11px] text-neutral-500 text-center">{controlError}</div>
+      )}
 
       {device && typeof device.volumePercent === "number" && !volumeBlocked ? (
         <div className="flex items-center gap-2 mt-4">
