@@ -9,6 +9,9 @@ const UserSchema = new mongoose.Schema({
   refreshToken: String,
   tokenExpiry: Date,
   createdAt: { type: Date, default: Date.now },
+  cachedTopGenres: [{ _id: false, name: String, percent: Number }],
+  cachedTasteTags: [String],
+  cachedTopGenresAt: Date,
 });
 
 export default mongoose.models.User || mongoose.model("User", UserSchema);
