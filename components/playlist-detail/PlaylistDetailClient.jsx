@@ -1,13 +1,8 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   FiArrowLeft,
-  FiCalendar,
-  FiClock,
-  FiMusic,
-  FiPlay,
-  FiEdit2,
   FiSearch,
   FiFilter,
   FiSliders,
@@ -17,21 +12,14 @@ import {
   FiChevronDown,
   FiPlusCircle,
 } from "react-icons/fi";
-import { FaSpotify } from "react-icons/fa";
 import TrackTable from "./TrackTable";
 import RefinePanel from "./RefinePanel";
 import HistoryTab from "./HistoryTab";
 import SimilarSongsTab from "./SimilarSongsTab";
+import PlaylistHeader from "./PlaylistHeader";
 import MergeModal from "@/components/MergeModal";
 import { useToast } from "@/components/ToastContext";
-
-function formatDate(d) {
-  return new Date(d).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { useTrackSelection } from "@/hooks/useTrackSelection";
 
 function totalDurationLabel(tracks) {
   const ms = tracks.reduce((acc, t) => acc + (t.durationMs || 0), 0);
@@ -56,12 +44,8 @@ export default function PlaylistDetailClient({ playlist }) {
   const [description, setDescription] = useState(
     playlist.playlistDescription || playlist.promptText
   );
-  const [editingMeta, setEditingMeta] = useState(false);
-  const [draftName, setDraftName] = useState(name);
-  const [draftDesc, setDraftDesc] = useState(description);
 
   const [tab, setTab] = useState("tracks");
-  const [selection, setSelection] = useState(() => new Set());
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -78,6 +62,9 @@ export default function PlaylistDetailClient({ playlist }) {
   const [savedAsPlaylist, setSavedAsPlaylist] = useState(playlist.savedAsPlaylist);
   const [playlistUrl, setPlaylistUrl] = useState(playlist.spotifyPlaylistUrl);
   const [savingToSpotify, setSavingToSpotify] = useState(false);
+
+  const { selection, selectedTracks, toggleSelection, toggleAllVisible, clearSelection } =
+    useTrackSelection(tracks);
 
   const artistsOnPlaylist = useMemo(() => {
     const set = new Set();
@@ -100,33 +87,6 @@ export default function PlaylistDetailClient({ playlist }) {
         .some((v) => v.toLowerCase().includes(q))
     );
   }, [tracks, search]);
-
-  function toggleSelection(uri) {
-    setSelection((prev) => {
-      const next = new Set(prev);
-      if (next.has(uri)) next.delete(uri);
-      else next.add(uri);
-      return next;
-    });
-  }
-  function toggleAllVisible(uris, makeSelected) {
-    setSelection((prev) => {
-      const next = new Set(prev);
-      for (const u of uris) {
-        if (makeSelected) next.add(u);
-        else next.delete(u);
-      }
-      return next;
-    });
-  }
-  function clearSelection() {
-    setSelection(new Set());
-  }
-
-  const selectedTracks = useMemo(
-    () => tracks.filter((t) => selection.has(t.uri)),
-    [tracks, selection]
-  );
 
   async function persistPatch(payload) {
     const res = await fetch(`/api/playlist/${playlist._id}/tracks`, {
@@ -280,17 +240,18 @@ export default function PlaylistDetailClient({ playlist }) {
     }
   }
 
-  async function saveMetadata() {
+  async function handleSaveMetadata(newName, newDesc) {
     try {
       await persistMetadata({
-        playlistName: draftName,
-        playlistDescription: draftDesc,
+        playlistName: newName,
+        playlistDescription: newDesc,
       });
-      setName(draftName);
-      setDescription(draftDesc);
-      setEditingMeta(false);
+      setName(newName);
+      setDescription(newDesc);
+      return true;
     } catch (err) {
       alert(err.message);
+      return false;
     }
   }
 
@@ -378,7 +339,6 @@ export default function PlaylistDetailClient({ playlist }) {
     }
   }
 
-  const totalDur = totalDurationLabel(tracks);
   const collageArts = tracks.slice(0, 4).map((t) => t.albumArt).filter(Boolean);
   while (collageArts.length < 4) collageArts.push(null);
 
@@ -396,130 +356,20 @@ export default function PlaylistDetailClient({ playlist }) {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
         {/* LEFT PANEL */}
         <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6">
-          <div className="flex items-start gap-5">
-            <div className="grid grid-cols-2 grid-rows-2 w-28 h-28 rounded-xl overflow-hidden flex-shrink-0 border border-neutral-800">
-              {collageArts.map((url, i) =>
-                url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={i} src={url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div key={i} className="bg-neutral-800" />
-                )
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-semibold tracking-wider text-spotify mb-1">
-                AI GENERATED PLAYLIST
-              </div>
-              {editingMeta ? (
-                <div className="space-y-2">
-                  <input
-                    value={draftName}
-                    onChange={(e) => setDraftName(e.target.value)}
-                    className="w-full text-2xl font-bold bg-neutral-950 border border-neutral-800 rounded px-3 py-1.5 text-neutral-100 focus:outline-none focus:border-spotify"
-                  />
-                  <textarea
-                    value={draftDesc}
-                    onChange={(e) => setDraftDesc(e.target.value)}
-                    rows={2}
-                    className="w-full text-sm bg-neutral-950 border border-neutral-800 rounded px-3 py-1.5 text-neutral-300 focus:outline-none focus:border-spotify resize-none"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={saveMetadata}
-                      className="px-3 py-1.5 rounded-md bg-spotify text-black text-xs font-semibold hover:brightness-110"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingMeta(false);
-                        setDraftName(name);
-                        setDraftDesc(description);
-                      }}
-                      className="px-3 py-1.5 rounded-md border border-neutral-800 text-neutral-300 text-xs hover:border-neutral-700"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-start gap-2">
-                    <h1 className="text-2xl lg:text-3xl font-bold text-neutral-50 break-words">
-                      {name}
-                    </h1>
-                    <button
-                      onClick={() => {
-                        setDraftName(name);
-                        setDraftDesc(description);
-                        setEditingMeta(true);
-                      }}
-                      className="mt-1.5 text-neutral-500 hover:text-neutral-200 transition-colors"
-                      aria-label="Edit name"
-                    >
-                      <FiEdit2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {description && (
-                    <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
-                      {description}
-                    </p>
-                  )}
-                </>
-              )}
-              <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-neutral-500">
-                <span className="inline-flex items-center gap-1.5">
-                  <FiCalendar className="w-3.5 h-3.5" /> Created {formatDate(playlist.createdAt)}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <FiMusic className="w-3.5 h-3.5" /> {tracks.length} tracks
-                </span>
-                {totalDur && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <FiClock className="w-3.5 h-3.5" /> {totalDur}
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2 mt-4">
-                <button
-                  onClick={playAll}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-spotify text-black font-semibold text-sm hover:brightness-110 transition"
-                >
-                  <FiPlay className="w-4 h-4" /> Play
-                </button>
-                {savedAsPlaylist && playlistUrl ? (
-                  <a
-                    href={playlistUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-700 text-neutral-100 text-sm hover:bg-neutral-800 transition"
-                  >
-                    <FaSpotify className="w-4 h-4 text-spotify" /> Open in Spotify
-                  </a>
-                ) : (
-                  <button
-                    onClick={saveToSpotify}
-                    disabled={savingToSpotify}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-700 text-neutral-100 text-sm hover:bg-neutral-800 transition disabled:opacity-50"
-                  >
-                    <FaSpotify className="w-4 h-4 text-spotify" />
-                    {savingToSpotify ? "Saving…" : "Save to Spotify"}
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    setDraftName(name);
-                    setDraftDesc(description);
-                    setEditingMeta(true);
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-700 text-neutral-100 text-sm hover:bg-neutral-800 transition"
-                >
-                  <FiEdit2 className="w-4 h-4" /> Edit Playlist
-                </button>
-              </div>
-            </div>
-          </div>
+          <PlaylistHeader
+            name={name}
+            description={description}
+            createdAt={playlist.createdAt}
+            trackCount={tracks.length}
+            totalDurationLabel={totalDurationLabel(tracks)}
+            collageArts={collageArts}
+            savedAsPlaylist={savedAsPlaylist}
+            playlistUrl={playlistUrl}
+            savingToSpotify={savingToSpotify}
+            onPlayAll={playAll}
+            onSaveToSpotify={saveToSpotify}
+            onSaveMetadata={handleSaveMetadata}
+          />
 
           {/* Tabs */}
           <div className="mt-6 border-b border-neutral-800">

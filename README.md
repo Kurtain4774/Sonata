@@ -30,7 +30,6 @@ Next.js 14 App Router, React 18, NextAuth v4 with Spotify OAuth, MongoDB/Mongoos
 | `/stats` | Top tracks/artists, recently played, listening summary |
 | `/share/[id]` | Public shared playlist view |
 | `/privacy`, `/terms` | Static policy pages |
-| `/screenshots/sonata` | Screenshot-only promo fixture route |
 
 ## API Routes
 
@@ -70,13 +69,6 @@ The `POST /api/recommend` contract is intentionally streaming NDJSON:
 - `npm run build`: production build and route validation.
 - `npm test`: run Vitest tests.
 - `npm run test:watch`: run Vitest in watch mode.
-- `npm run screenshots:sonata`: capture deterministic promo frames.
-
-## Promo Screenshots
-
-`npm run screenshots:sonata` captures six PNG frames in `screenshots/sonata-frames`.
-
-The workflow uses the screenshot fixture route at `/screenshots/sonata`, starts `next dev` on port 3000 if needed, and captures a `1440x900` desktop viewport with Playwright.
 
 ## Deploy to Vercel
 

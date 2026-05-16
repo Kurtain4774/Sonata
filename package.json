@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "screenshots:sonata": "node scripts/capture-sonata-frames.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"

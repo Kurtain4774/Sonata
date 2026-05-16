@@ -2,6 +2,7 @@ import { getRecommendations, GeminiParseError, GeminiUnavailableError } from "@/
 import { searchTrack, SpotifyAuthError, getTopArtists, getTopTracks, getRecentlyPlayed } from "@/lib/spotify";
 import { withSpotifyRetry } from "@/lib/spotifyAuth";
 import { rateLimit } from "@/lib/rateLimit";
+import { RATE_LIMITS } from "@/lib/rateLimits";
 import { getDeezerPreview } from "@/lib/deezer";
 import { jsonError, readJsonBody, requireApiSession, rateLimitResponse } from "@/lib/api";
 import { connectDB } from "@/lib/mongodb";
@@ -39,7 +40,7 @@ export async function POST(req) {
     rawSeed && typeof rawSeed.title === "string" && typeof rawSeed.artist === "string"
       ? { title: rawSeed.title.trim(), artist: rawSeed.artist.trim() }
       : null;
-  const rl = rateLimit(`recommend:${session.spotifyId}`, { limit: 10, windowMs: 60_000 });
+  const rl = rateLimit(`recommend:${session.spotifyId}`, RATE_LIMITS.recommend);
   if (!rl.ok) {
     return rateLimitResponse(rl);
   }

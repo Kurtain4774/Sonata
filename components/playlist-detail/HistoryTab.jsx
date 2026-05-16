@@ -1,14 +1,5 @@
 import { FiClock } from "react-icons/fi";
-
-function formatWhen(d) {
-  return new Date(d).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+import { formatDateTime } from "@/lib/timeFormatters";
 
 export default function HistoryTab({ history = [] }) {
   if (!history.length) {
@@ -25,7 +16,7 @@ export default function HistoryTab({ history = [] }) {
           <span className="absolute -left-2 mt-1 w-4 h-4 rounded-full bg-spotify flex items-center justify-center">
             <FiClock className="w-2.5 h-2.5 text-black" />
           </span>
-          <div className="text-xs text-neutral-500">{formatWhen(h.appliedAt)}</div>
+          <div className="text-xs text-neutral-500">{formatDateTime(h.appliedAt)}</div>
           <div className="mt-1 text-sm text-neutral-200">{h.followUp || "Refinement applied"}</div>
           {(h.shortcutsApplied?.length || h.excludedArtists?.length) && (
             <div className="mt-2 flex flex-wrap gap-1.5">

@@ -1,140 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaVolumeUp } from "react-icons/fa";
 import { HiOutlineMusicNote } from "react-icons/hi";
-
-const POLL_MS = 5000;
-const TICK_MS = 500;
-
-function formatMs(ms) {
-  const secs = Math.floor((ms || 0) / 1000);
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
+import { formatDuration } from "@/lib/timeFormatters";
+import { usePlayback } from "@/hooks/usePlayback";
 
 export default function NowPlayingPanel() {
-  const [playback, setPlayback] = useState(null);
-  const [position, setPosition] = useState(0);
-  const [seekDraft, setSeekDraft] = useState(null);
+  const {
+    playback,
+    track,
+    duration,
+    isPlaying,
+    device,
+    position,
+    seekDraft,
+    setSeekDraft,
+    controlError,
+    handlePlayPause,
+    handleNext,
+    handlePrev,
+    commitSeek,
+  } = usePlayback();
+
   const [volume, setVolume] = useState(0.7);
   const [volumeBlocked, setVolumeBlocked] = useState(false);
-  const [controlError, setControlError] = useState(null);
-  const lastSyncRef = useRef(0);
   const volumeTimerRef = useRef(null);
 
-  const fetchPlayback = useCallback(async (signal) => {
-    try {
-      const res = await fetch("/api/now-playing", { signal, cache: "no-store" });
-      if (!res.ok) {
-        setPlayback(null);
-        return;
-      }
-      const data = await res.json();
-      const pb = data.playback || null;
-      setPlayback(pb);
-      if (pb) {
-        setPosition(pb.progressMs || 0);
-        lastSyncRef.current = Date.now();
-        const vp = pb.device?.volumePercent;
-        if (typeof vp === "number" && !volumeTimerRef.current) {
-          setVolume(vp / 100);
-        }
-      } else {
-        setPosition(0);
-      }
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        setPlayback(null);
-      }
-    }
-  }, []);
-
+  // Sync the slider to the device volume reported by polling, unless the user
+  // is mid-drag (a pending debounce timer means a local change is in flight).
   useEffect(() => {
-    const controller = new AbortController();
-    fetchPlayback(controller.signal);
-    const id = setInterval(() => fetchPlayback(controller.signal), POLL_MS);
-    return () => {
-      controller.abort();
-      clearInterval(id);
-    };
-  }, [fetchPlayback]);
-
-  useEffect(() => {
-    if (!playback?.isPlaying || !playback?.durationMs) return;
-    const id = setInterval(() => {
-      if (seekDraft !== null) return;
-      const elapsed = Date.now() - lastSyncRef.current;
-      const next = Math.min((playback.progressMs || 0) + elapsed, playback.durationMs);
-      setPosition(next);
-    }, TICK_MS);
-    return () => clearInterval(id);
-  }, [playback?.isPlaying, playback?.progressMs, playback?.durationMs, seekDraft]);
-
-  const track = playback?.track || null;
-  const duration = playback?.durationMs || 0;
-  const isPlaying = !!playback?.isPlaying;
-  const device = playback?.device || null;
-
-  const callControl = useCallback(async (path, init) => {
-    setControlError(null);
-    try {
-      const res = await fetch(path, {
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        ...init,
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 409) {
-          setControlError(
-            data?.error === "PREMIUM_REQUIRED"
-              ? "Spotify Premium required."
-              : data?.error === "NO_ACTIVE_DEVICE"
-              ? "No active Spotify device."
-              : "Playback unavailable."
-          );
-        }
-        return false;
-      }
-      return true;
-    } catch {
-      return false;
+    const vp = playback?.device?.volumePercent;
+    if (typeof vp === "number" && !volumeTimerRef.current) {
+      setVolume(vp / 100);
     }
-  }, []);
-
-  const handlePlayPause = async () => {
-    const target = !isPlaying;
-    setPlayback((p) => (p ? { ...p, isPlaying: target } : p));
-    const ok = await callControl("/api/playback/play", {
-      method: "PUT",
-      body: JSON.stringify({ play: target, deviceId: playback?.device?.id }),
-    });
-    if (!ok) setPlayback((p) => (p ? { ...p, isPlaying: !target } : p));
-    setTimeout(() => fetchPlayback(), 600);
-  };
-
-  const handleNext = async () => {
-    const ok = await callControl("/api/playback/next", { method: "POST" });
-    if (ok) setTimeout(() => fetchPlayback(), 400);
-  };
-
-  const handlePrev = async () => {
-    const ok = await callControl("/api/playback/previous", { method: "POST" });
-    if (ok) setTimeout(() => fetchPlayback(), 400);
-  };
-
-  const commitSeek = async (ms) => {
-    setSeekDraft(null);
-    setPosition(ms);
-    lastSyncRef.current = Date.now();
-    setPlayback((p) => (p ? { ...p, progressMs: ms } : p));
-    await callControl("/api/playback/seek", {
-      method: "PUT",
-      body: JSON.stringify({ positionMs: ms }),
-    });
-  };
+  }, [playback]);
 
   const handleVolume = (vol) => {
     setVolume(vol);
@@ -210,8 +110,8 @@ export default function NowPlayingPanel() {
           className="w-full h-1 accent-green-400 cursor-pointer disabled:opacity-40"
         />
         <div className="flex justify-between text-[10px] text-neutral-500 tabular-nums mt-1">
-          <span>{formatMs(seekDraft !== null ? seekDraft : position)}</span>
-          <span>{formatMs(duration)}</span>
+          <span>{formatDuration(seekDraft !== null ? seekDraft : position)}</span>
+          <span>{formatDuration(duration)}</span>
         </div>
       </div>
 

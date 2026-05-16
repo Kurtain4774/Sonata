@@ -4,13 +4,14 @@ import Prompt from "@/models/Prompt";
 import Settings from "@/models/Settings";
 import { mergeWithDefaults } from "@/lib/settings";
 import { rateLimit } from "@/lib/rateLimit";
+import { RATE_LIMITS } from "@/lib/rateLimits";
 import { jsonError, requireApiSession } from "@/lib/api";
 
 export async function GET() {
   const { session, response } = await requireApiSession({ rejectRefreshError: false });
   if (response) return response;
 
-  const rl = rateLimit(`export:${session.spotifyId}`, { limit: 5, windowMs: 60_000 });
+  const rl = rateLimit(`export:${session.spotifyId}`, RATE_LIMITS.settingsExport);
   if (!rl.ok) {
     return jsonError("Too many export requests. Try again shortly.", 429, {
       headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) },

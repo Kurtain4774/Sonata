@@ -3,13 +3,14 @@ import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Prompt from "@/models/Prompt";
 import { rateLimit } from "@/lib/rateLimit";
+import { RATE_LIMITS } from "@/lib/rateLimits";
 import { jsonError, jsonOk, readJsonBody, requireApiSession } from "@/lib/api";
 
 export async function PATCH(req) {
   const { session, response } = await requireApiSession({ rejectRefreshError: false });
   if (response) return response;
 
-  const rl = rateLimit(`explore-share:${session.spotifyId}`, { limit: 20, windowMs: 60_000 });
+  const rl = rateLimit(`explore-share:${session.spotifyId}`, RATE_LIMITS.exploreShare);
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Too many requests" },

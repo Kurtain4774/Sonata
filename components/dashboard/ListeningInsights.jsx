@@ -66,7 +66,7 @@ function ListeningInsights({ data, loading }) {
               cy="55"
               r={radius}
               fill="none"
-              stroke="#262626"
+              stroke="var(--donut-track)"
               strokeWidth="10"
             />
             {dominant && (

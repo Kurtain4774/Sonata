@@ -4,6 +4,7 @@ import { memo, useMemo, useRef, useState } from "react";
 import TrackList from "../TrackList";
 import PlaylistSaveButton from "../PlaylistSaveButton";
 import RefinementInput from "./RefinementInput";
+import FineTuneControls from "../FineTuneControls";
 
 function Skeleton() {
   return (
@@ -43,6 +44,9 @@ function ResultsSection({
   onBuildAround,
   songKey,
   onGenerate,
+  fineTune,
+  onFineTuneChange,
+  onRegenerate,
   resultsRef,
   refineInputRef,
 }) {
@@ -195,6 +199,26 @@ function ResultsSection({
                   )}
                 </div>
               </div>
+
+              {/* Adjust the mix — fine-tune context, then re-generate */}
+              {onFineTuneChange && (
+                <div className="mt-4 pt-4 border-t border-neutral-800">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs uppercase tracking-wide text-neutral-500">
+                      Adjust the mix
+                    </span>
+                    <button
+                      type="button"
+                      onClick={onRegenerate}
+                      disabled={loading}
+                      className="px-3 py-1 rounded-full bg-spotify text-black text-xs font-semibold hover:brightness-110 disabled:opacity-50"
+                    >
+                      Apply &amp; regenerate
+                    </button>
+                  </div>
+                  <FineTuneControls values={fineTune} onChange={onFineTuneChange} />
+                </div>
+              )}
 
               <RefinementInput
                 refineText={refineText}

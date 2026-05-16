@@ -6,12 +6,12 @@ Next.js 14 (App Router, JS) + Tailwind + MongoDB (Mongoose) + Google Gemini + Sp
 
 ## Pages
 - `/` — Landing (hero, demo, features, FAQ, floating albums). Server component.
-- `/dashboard` — Prompt → recs flow, plus widgets: NowPlaying, ListeningInsights, RecentHistory, TrendingMoods, CommunityPicks, RecommendedRow, StatTiles, TasteProfile. Protected.
+- `/dashboard` — Prompt → recs flow, plus widgets: NowPlaying, ListeningInsights, RecentHistory, TrendingMoods, StatTiles, TasteProfile. Protected.
 - `/explore` — Browse public/shared playlists. Protected.
 - `/your-music` — User's saved playlists + history. Protected.
 - `/stats` — Top tracks/artists, recently played, summary. Protected.
 - `/share/[id]` — Public shared prompt/playlist view.
-- `/privacy`, `/terms`, `/screenshots` — Static.
+- `/privacy`, `/terms` — Static.
 
 ## API Routes
 - `auth/[...nextauth]` — Spotify OAuth (NextAuth)
@@ -39,7 +39,7 @@ Prompt → Gemini returns `[{title, artist}]` JSON (≈20) → per-song Spotify 
 - Global: Navbar, ProfileMenu, AuthButton, Providers, ToastContext, SettingsContext, ErrorBoundary, OnboardingTour, GlobalMiniPlayer, AudioPreview(Provider), WebPlaybackProvider, SonataLogo
 - Prompt/Tracks: PromptInput, VibeChips, FineTuneControls, TrackCard, TrackList, PlaylistSaveButton, MergeModal, ShareToggle
 - Pages: DashboardClient, HistoryPageClient, HistoryCard, ExploreClient/ExploreCard, StatsClient, YourMusicClient, CurrentPlaylistsClient, SpotifyPlaylistCard
-- Dashboard widgets: HeroPromptCard, NowPlayingPanel, ListeningInsights, RecentHistoryWidget, RecommendedRow, TrendingMoods, CommunityPicks, StatTiles, TasteProfile, RefinementInput, ResultsSection, WidgetGroup
+- Dashboard widgets: HeroPromptCard, NowPlayingPanel, ListeningInsights, RecentHistoryWidget, TrendingMoods, StatTiles, TasteProfile, RefinementInput, ResultsSection, WidgetGroup
 - Playlist detail: PlaylistDetailClient, TrackTable, RefinePanel, SimilarSongsTab, HistoryTab, MoodFitPill
 - Landing: HeroSection, DemoSection, FeatureCards, HowItWorks, WhySonata, SpotifyIntegration, FAQSection, FinalCTA, FloatingAlbums, AlbumArt, DashboardPreview, LandingHeader, Footer
 - Settings: SettingsModal + `settings/tabs` + `settings/controls`
@@ -54,7 +54,7 @@ user-read-private, user-read-email, user-read-playback-state, user-modify-playba
 next 14, next-auth, mongoose, @google/generative-ai, tailwindcss, framer-motion, react-icons, @dnd-kit/{core,sortable,utilities}, canvas (cover gen). Dev: vitest, @vitest/ui, @testing-library/jest-dom, jsdom, @playwright/test.
 
 ## Scripts
-`dev`, `build`, `start`, `lint`, `test` (vitest run), `test:watch`, `test:ui`, `screenshots:sonata`.
+`dev`, `build`, `start`, `lint`, `test` (vitest run), `test:watch`, `test:ui`.
 
 ## Env
 SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, NEXTAUTH_URL, NEXTAUTH_SECRET, GEMINI_API_KEY, MONGODB_URI, plus token encryption key consumed by `lib/crypto`.

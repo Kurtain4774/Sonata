@@ -1,54 +1,10 @@
 "use client";
 
 import AlbumArt from "./AlbumArt";
-import {
-  FaPlay,
-  FaPlus,
-  FaCheckCircle,
-  FaBell,
-  FaCompass,
-  FaHome,
-  FaBookOpen,
-  FaHistory,
-  FaHeart,
-  FaSpotify,
-  FaInstagram,
-  FaWhatsapp,
-  FaTwitter,
-  FaLink,
-  FaPaperPlane,
-  FaUser,
-} from "react-icons/fa";
+import { FaPlay, FaPlus, FaCheckCircle, FaBell, FaPaperPlane } from "react-icons/fa";
 import { SAMPLE_TRACKS } from "./tracks";
-
-const SPARKLINE_POINTS = [
-  4, 8, 6, 12, 10, 16, 14, 18, 22, 20, 28, 24, 30, 26, 34, 32, 38, 36, 42, 40,
-  46, 44, 50, 48, 54, 52, 58, 56, 62, 60,
-];
-
-function Sparkline() {
-  const max = Math.max(...SPARKLINE_POINTS);
-  const w = 200;
-  const h = 50;
-  const step = w / (SPARKLINE_POINTS.length - 1);
-  const path = SPARKLINE_POINTS.map((v, i) => {
-    const x = i * step;
-    const y = h - (v / max) * h;
-    return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-12">
-      <defs>
-        <linearGradient id="spark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1DB954" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#1DB954" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={`${path} L${w},${h} L0,${h} Z`} fill="url(#spark)" />
-      <path d={path} stroke="#1DB954" strokeWidth="1.5" fill="none" />
-    </svg>
-  );
-}
+import DashboardPreviewSidebar from "./DashboardPreviewSidebar";
+import DashboardPreviewRail from "./DashboardPreviewRail";
 
 export default function DashboardPreview({ selectedTrackId, onSelectTrack, tracks = SAMPLE_TRACKS }) {
   return (
@@ -67,65 +23,7 @@ export default function DashboardPreview({ selectedTrackId, onSelectTrack, track
 
       {/* App body */}
       <div className="flex h-[430px] sm:h-[500px] min-[1500px]:h-[540px] min-[1800px]:h-[560px]">
-        {/* Sidebar */}
-        <aside className="hidden md:flex md:w-36 lg:w-40 min-[1800px]:w-44 shrink-0 border-r border-neutral-800 bg-[#0a0a0a] flex-col">
-          <div className="px-4 py-4 flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-gradient-to-br from-spotify to-emerald-700">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 text-black" fill="currentColor">
-                <path d="M3 12h2v4H3zM7 8h2v12H7zM11 4h2v20h-2zM15 8h2v12h-2zM19 12h2v4h-2z" />
-              </svg>
-            </span>
-            <span className="text-sm font-bold">Sonata</span>
-          </div>
-          <nav className="px-2 space-y-1 text-sm">
-            {[
-              { icon: FaHome, label: "Discover", active: true },
-              { icon: FaCompass, label: "Explore" },
-              { icon: FaBookOpen, label: "Library" },
-              { icon: FaHistory, label: "History" },
-              { icon: FaHeart, label: "Liked" },
-            ].map(({ icon: Icon, label, active }) => (
-              <div
-                key={label}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-md ${
-                  active
-                    ? "bg-neutral-800 text-white"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                <Icon className="text-xs" />
-                {label}
-              </div>
-            ))}
-          </nav>
-          <div className="px-4 pt-5 pb-2 text-[10px] uppercase tracking-wider text-neutral-500">
-            Playlists
-          </div>
-          <div className="px-2 space-y-1 text-xs text-neutral-300 flex-1">
-            {[
-              ["🚗", "Late Night Drive"],
-              ["🎯", "Focus Flow"],
-              ["😊", "Feel Good Hits"],
-              ["💪", "Workout Mix"],
-              ["☀️", "Chill Sundays"],
-            ].map(([emoji, name]) => (
-              <div key={name} className="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-neutral-900">
-                <span className="w-5 h-5 rounded bg-neutral-800 flex items-center justify-center text-[10px]">
-                  {emoji}
-                </span>
-                {name}
-              </div>
-            ))}
-          </div>
-          <div className="px-3 py-3 border-t border-neutral-800 flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-neutral-700 flex items-center justify-center">
-              <FaUser className="text-neutral-300 text-xs" />
-            </div>
-            <div className="text-xs">
-              <div className="font-medium">Aria</div>
-            </div>
-          </div>
-        </aside>
+        <DashboardPreviewSidebar />
 
         {/* Main panel */}
         <div className="flex-1 min-w-0 p-3 sm:p-4 min-[1500px]:p-5 overflow-hidden">
@@ -209,55 +107,7 @@ export default function DashboardPreview({ selectedTrackId, onSelectTrack, track
           </div>
         </div>
 
-        {/* Right rail */}
-        <aside className="hidden min-[1800px]:block w-48 shrink-0 border-l border-neutral-800 bg-[#0a0a0a] p-3 space-y-3">
-          <div className="rounded-md border border-neutral-800 p-3">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-neutral-400">Your listening</span>
-              <span className="text-[10px] text-neutral-500">This week ›</span>
-            </div>
-            <Sparkline />
-            <div className="text-xl font-bold mt-1">1,248</div>
-            <div className="text-[10px] text-neutral-500">Minutes listened</div>
-            <div className="text-[10px] text-spotify mt-1">▲ 18% vs last week</div>
-          </div>
-
-          <div className="rounded-md border border-neutral-800 p-3">
-            <div className="text-[11px] font-semibold mb-0.5">Save to Spotify</div>
-            <div className="text-[10px] text-neutral-500 mb-2 leading-snug">
-              Save your recommendations as a playlist in Spotify.
-            </div>
-            <button className="w-full py-1.5 rounded-full bg-spotify text-black text-[11px] font-semibold flex items-center justify-center gap-1.5">
-              <FaSpotify /> Save all to Spotify
-            </button>
-          </div>
-
-          <div className="rounded-md border border-neutral-800 p-3">
-            <div className="text-[11px] font-semibold mb-0.5">Share your vibe</div>
-            <div className="text-[10px] text-neutral-500 mb-2 leading-snug">
-              Let friends discover this vibe and your playlist.
-            </div>
-            <div className="flex gap-1.5">
-              {[FaLink, FaInstagram, FaTwitter, FaWhatsapp].map((Icon, i) => (
-                <span key={i} className="w-7 h-7 rounded-full bg-neutral-800 flex items-center justify-center">
-                  <Icon className="text-[10px]" />
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-md border border-neutral-800 p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="inline-block w-3 h-3 rounded-sm bg-gradient-to-br from-purple-500 to-pink-500" />
-              <span className="text-[11px] font-semibold">Preview</span>
-              <span className="text-[10px] text-neutral-500">powered by Deezer</span>
-            </div>
-            <div className="text-[10px] text-neutral-500 mb-2 leading-snug">
-              High-quality previews. Real tracks. Real vibe.
-            </div>
-            <div className="text-[10px] text-spotify">Learn more →</div>
-          </div>
-        </aside>
+        <DashboardPreviewRail />
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { FaSpotify } from "react-icons/fa";
 import { FiMoreVertical, FiRefreshCw } from "react-icons/fi";
 import AudioPreview from "./AudioPreview";
+import AlbumArtImage from "./AlbumArtImage";
+import { getFirstArtist } from "@/lib/trackHelpers";
 
 export default function TrackCard({
   track,
@@ -33,7 +35,7 @@ export default function TrackCard({
     };
   }, [menuOpen]);
 
-  const firstArtist = (track.artist || "").split(",")[0]?.trim();
+  const firstArtist = getFirstArtist(track);
   const hasMenu = Boolean(onExcludeArtist || onExcludeSong || onBuildAround);
 
   return (
@@ -42,16 +44,10 @@ export default function TrackCard({
         swapping ? "opacity-60 animate-pulse" : ""
       }`}
     >
-      {track.albumArt ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={track.albumArt}
-          alt=""
-          className="w-14 h-14 rounded object-cover"
-        />
-      ) : (
-        <div className="w-14 h-14 rounded bg-neutral-800" />
-      )}
+      <AlbumArtImage
+        src={track.albumArt}
+        className="w-14 h-14 rounded object-cover"
+      />
       <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2">
         <div className="min-w-0 flex-1">
           <div className="truncate font-medium leading-tight">{track.title}</div>

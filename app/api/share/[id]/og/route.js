@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import Prompt from "@/models/Prompt";
 import { rateLimit } from "@/lib/rateLimit";
+import { RATE_LIMITS } from "@/lib/rateLimits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ async function fetchAsDataUrl(url) {
 
 export async function GET(req, { params }) {
   const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "anon";
-  const rl = rateLimit(`og:${ip}`, { limit: 30, windowMs: 60_000 });
+  const rl = rateLimit(`og:${ip}`, RATE_LIMITS.ogImage);
   if (!rl.ok) {
     return new Response("Too many requests", {
       status: 429,

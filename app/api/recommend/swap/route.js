@@ -1,5 +1,6 @@
 import { getSwapRecommendation } from "@/lib/gemini";
 import { rateLimit } from "@/lib/rateLimit";
+import { RATE_LIMITS } from "@/lib/rateLimits";
 import { jsonError, jsonOk, readJsonBody, requireApiSession, rateLimitResponse } from "@/lib/api";
 import { parseExcludedArtists, mapRecommendError } from "@/lib/recommendHelpers";
 import { searchAndEnrichTrack } from "@/lib/recommendationPipeline";
@@ -11,7 +12,7 @@ export async function POST(req) {
   const { body, response: invalidJson } = await readJsonBody(req);
   if (invalidJson) return invalidJson;
 
-  const rl = rateLimit(`swap:${session.spotifyId}`, { limit: 30, windowMs: 60_000 });
+  const rl = rateLimit(`swap:${session.spotifyId}`, RATE_LIMITS.swap);
   if (!rl.ok) {
     return rateLimitResponse(rl);
   }

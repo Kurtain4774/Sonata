@@ -5,6 +5,7 @@
 :root {
   --accent-rgb: 29 185 84;
   --accent-color: rgb(var(--accent-rgb));
+  --donut-track: #262626;
 }
 
 html {
@@ -29,6 +30,7 @@ html.light {
   --light-text: #111827;
   --light-muted: #596574;
   --light-faint: #7b8794;
+  --donut-track: #d1d5db;
 }
 
 html.light,
@@ -337,6 +339,21 @@ html.light .text-violet-300,
 html.light .text-violet-400 { color: #6d28d9 !important; }
 html.light .text-sky-300,
 html.light .text-sky-400 { color: #0369a1 !important; }
+
+/* ── additional missing remaps ── */
+
+html.light [class~="bg-neutral-950/95"] {
+  background-color: var(--light-panel) !important;
+}
+
+html.light [class~="hover:text-neutral-100"]:hover,
+html.light [class~="hover:text-neutral-300"]:hover {
+  color: var(--light-text) !important;
+}
+
+html.light .text-yellow-300 { color: #92400e !important; }
+html.light .text-pink-400   { color: #be185d !important; }
+html.light .text-orange-400 { color: #c2410c !important; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(var(--tw-rotate, 0deg)); }

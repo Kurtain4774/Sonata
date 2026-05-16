@@ -14,6 +14,9 @@ import NowPlayingPanel from "./dashboard/NowPlayingPanel";
 import ListeningInsights from "./dashboard/ListeningInsights";
 import TasteProfile from "./dashboard/TasteProfile";
 import ResultsSection from "./dashboard/ResultsSection";
+import { songKey } from "@/lib/trackHelpers";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { randomSurprisePrompt } from "@/lib/promptIdeas";
 
 export default function DashboardClient() {
   const searchParams = useSearchParams();
@@ -40,36 +43,8 @@ export default function DashboardClient() {
   const seedAutoFiredRef = useRef(false);
 
   // ── Per-section dashboard data (loaded independently) ──────────────────────
-  const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [history, setHistory] = useState(null);
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [moods, setMoods] = useState(null);
-  const [moodsLoading, setMoodsLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    const load = (url, setData, setLoading) => {
-      fetch(url)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => {
-          if (!active) return;
-          setData(d?.data ?? null);
-          setLoading(false);
-        })
-        .catch(() => { if (active) setLoading(false); });
-    };
-    load("/api/dashboard/stats", setStats, setStatsLoading);
-    load("/api/dashboard/history", setHistory, setHistoryLoading);
-    load("/api/dashboard/moods", setMoods, setMoodsLoading);
-    return () => { active = false; };
-  }, []);
-
-  // ── Stable helpers ─────────────────────────────────────────────────────────
-  const songKey = useCallback(
-    (t) => `${(t.title || "").toLowerCase()}|${(t.artist || "").toLowerCase()}`,
-    []
-  );
+  const { stats, statsLoading, history, historyLoading, moods, moodsLoading } =
+    useDashboardData();
 
   const addExcludedArtist = useCallback((name) => {
     const clean = (name || "").trim();
@@ -86,7 +61,7 @@ export default function DashboardClient() {
   const excludeSong = useCallback((track) => {
     setExcludedSongKeys((prev) => {
       const next = new Set(prev);
-      next.add(`${(track.title || "").toLowerCase()}|${(track.artist || "").toLowerCase()}`);
+      next.add(songKey(track));
       return next;
     });
   }, []);
@@ -219,7 +194,7 @@ export default function DashboardClient() {
   const swapTrack = useCallback(async (track) => {
     const currentResult = resultRef.current;
     if (!currentResult || swappingKey) return;
-    const key = `${(track.title || "").toLowerCase()}|${(track.artist || "").toLowerCase()}`;
+    const key = songKey(track);
     setSwappingKey(key);
     try {
       const res = await fetch("/api/recommend/swap", {
@@ -237,9 +212,7 @@ export default function DashboardClient() {
       setResult((prev) => {
         if (!prev) return prev;
         const next = prev.tracks.map((t) =>
-          `${(t.title || "").toLowerCase()}|${(t.artist || "").toLowerCase()}` === key
-            ? data.track
-            : t
+          songKey(t) === key ? data.track : t
         );
         return { ...prev, tracks: next };
       });
@@ -256,15 +229,18 @@ export default function DashboardClient() {
     generate(auto, { title: track.title, artist: track.artist });
   }, [generate]);
 
-  const appendVibe = useCallback((v) => {
-    setPrompt((cur) => (cur ? `${cur.trim()} ${v.toLowerCase()}` : v.toLowerCase()));
-  }, []);
-
-  const handlePickMood = useCallback((moodPrompt) => {
-    if (!moodPrompt) return;
-    setPrompt(moodPrompt);
-    generate(moodPrompt);
+  // Set the prompt box and immediately generate — used by example prompts,
+  // trending moods, the contextual nudge, and the guided builder.
+  const quickGenerate = useCallback((text) => {
+    const p = (text || "").trim();
+    if (!p) return;
+    setPrompt(p);
+    generate(p);
   }, [generate]);
+
+  const handleSurprise = useCallback(() => {
+    quickGenerate(randomSurprisePrompt());
+  }, [quickGenerate]);
 
   // ── Seed auto-fire from URL params ─────────────────────────────────────────
   useEffect(() => {
@@ -288,6 +264,20 @@ export default function DashboardClient() {
     generate(promptRef.current);
   }, [generate]);
 
+  // Vibe chip — combine with any typed text, then generate.
+  const chipGenerate = useCallback((chipPrompt) => {
+    const typed = promptRef.current.trim();
+    const combined = typed ? `${typed}, ${chipPrompt}` : chipPrompt;
+    setPrompt(combined);
+    generate(combined);
+  }, [generate]);
+
+  // Re-run the current playlist's prompt with the latest fine-tune context.
+  const regenerateWithFineTune = useCallback(() => {
+    const current = resultRef.current;
+    if (current) generate(current.originalPrompt);
+  }, [generate]);
+
   return (
     <WebPlaybackProvider>
       <OnboardingTour />
@@ -299,9 +289,10 @@ export default function DashboardClient() {
               onChange={setPrompt}
               onSubmit={handleHeroSubmit}
               loading={loading}
-              onPickVibe={appendVibe}
-              fineTune={fineTune}
-              onFineTuneChange={setFineTune}
+              onChipGenerate={chipGenerate}
+              onSurprise={handleSurprise}
+              onQuickGenerate={quickGenerate}
+              moods={moods}
             />
 
             <ErrorBoundary compact label="Stats">
@@ -309,7 +300,7 @@ export default function DashboardClient() {
             </ErrorBoundary>
 
             <WidgetGroup
-              onPickMood={handlePickMood}
+              onPickMood={quickGenerate}
               historyData={history}
               historyLoading={historyLoading}
               moodsData={moods}
@@ -335,6 +326,9 @@ export default function DashboardClient() {
               onBuildAround={buildAround}
               songKey={songKey}
               onGenerate={generate}
+              fineTune={fineTune}
+              onFineTuneChange={setFineTune}
+              onRegenerate={regenerateWithFineTune}
               resultsRef={resultsRef}
               refineInputRef={refineInputRef}
             />
